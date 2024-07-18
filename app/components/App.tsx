@@ -31,13 +31,14 @@ const App: () => JSX.Element = () => {
 
   useEffect(() => {
     if (microphoneState === MicrophoneState.Ready) {
-      connectToDeepgram({
-        model: "nova-2",
-        interim_results: true,
-        smart_format: true,
-        filler_words: true,
-        utterance_end_ms: 3000,
-      });
+      // TODO. Uncommit for production. Disable connection to Deepgram for prevent wasting of funds
+      // connectToDeepgram({
+      //   model: "nova-2",
+      //   interim_results: true,
+      //   smart_format: true,
+      //   filler_words: true,
+      //   utterance_end_ms: 3000,
+      // });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [microphoneState]);
@@ -112,21 +113,36 @@ const App: () => JSX.Element = () => {
   }, [microphoneState, connectionState]);
 
   return (
-    <>
-      <div className="flex h-full antialiased">
-        <div className="flex flex-row h-full w-full overflow-x-hidden">
-          <div className="flex flex-col flex-auto h-full">
-            {/* height 100% minus 8rem */}
-            <div className="relative w-full h-full">
-              {microphone && <Visualizer microphone={microphone} />}
-              <div className="absolute bottom-[8rem]  inset-x-0 max-w-4xl mx-auto text-center">
-                {caption && <span className="bg-black/70 p-8">{caption}</span>}
-              </div>
-            </div>
-          </div>
+      <div className="flex h-full flex-col gap-6">
+        <div className="flex flex-1 items-center justify-center bg-pink-500 p-2">
+          <div className="max-w-3xl bg-emerald-600">here camera output</div>
         </div>
+        <div className="flex flex-1 flex-col items-center justify-center bg-green-500 p-2 ">
+          <div className="max-w-3xl bg-amber-700 h-5">strip of miles are here</div>
+          <div className="bottom-[8rem] inset-x-0 max-w-4xl mx-auto text-center bg-cyan-600">{caption} </div>
+        </div>
+
       </div>
-    </>
+
+
+      // <>
+      //   <div className="flex h-full antialiased">
+      //     <div className="flex flex-row h-full w-full overflow-x-hidden">
+      //       <div className="flex flex-col flex-auto h-full bg-cyan-900 ">
+      //         {/* height 100% minus 8rem */}
+      //         <div className="relative w-full h-screen justify-center items-center ">
+      //           <div className="max-w-3xl bg-emerald-600">here camera output</div>
+      //           <div className="max-w-3xl bg-amber-700 h-5">strip of miles are here </div>
+      //           <div className="max-w-3xl bg-cyan-600 h-5">{caption} </div>
+      //           {/*{microphone && <Visualizer microphone={microphone} />}*/}
+      //           <div className="absolute bottom-[8rem] inset-x-0 max-w-4xl mx-auto text-center">
+      //             {caption && <span className="bg-black/70 p-8">{caption}</span>}
+      //           </div>
+      //         </div>
+      //       </div>
+      //     </div>
+      //   </div>
+      // </>
   );
 };
 
