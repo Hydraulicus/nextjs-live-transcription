@@ -56,14 +56,12 @@ const FaceApiContextProvider: FunctionComponent<
   const [modelsLoaded, setModelsLoaded] = useState(false);
 
     useEffect(() => {
-        console.log(faceapi.nets)
-
         // Load models
         const loadModels = async () => {
             const MODEL_URL = '/models';
             await faceapi.loadSsdMobilenetv1Model(MODEL_URL);
             await faceapi.loadFaceLandmarkModel(MODEL_URL);
-            await faceapi.loadFaceRecognitionModel(MODEL_URL);
+            await faceapi.loadFaceExpressionModel(MODEL_URL);
             setModelsLoaded(true);
         };
 
@@ -82,7 +80,56 @@ const FaceApiContextProvider: FunctionComponent<
           startVideo();
     }, []);
 
-  // const [connection, setConnection] = useState<LiveClient | null>(null);
+    useEffect(() => {
+        if (modelsLoaded && videoRef && videoRef.current && canvasRef && canvasRef.current) {
+            // Detect faces in the video stream
+            const handleVideoPlay = () => {
+                const video = videoRef.current;
+
+                const detect = async () => {
+                    // const detections = await faceapi.detectSingleFace(video)
+                    //     .withFaceLandmarks()
+                    //     .withFaceDescriptor()
+
+
+                    // const detections = await faceapi.detectAllFaces(video)
+                    //     .withFaceLandmarks()
+                    //     .withFaceDescriptors();
+
+                    const detections = await faceapi.detectSingleFace(video)
+                        .withFaceLandmarks()
+                        // .withFaceDescriptor()
+                        .withFaceExpressions()
+                    const canvas = canvasRef.current;
+
+                    faceapi.matchDimensions(canvas, {
+                        width: video.videoWidth,
+                        height: video.videoHeight
+                    });
+                    if (detections) {
+                        console.log(' detections = ', detections.expressions);
+                        const resizedDetections = faceapi.resizeResults(detections, {
+                            width: video.videoWidth,
+                            height: video.videoHeight
+                        });
+
+                        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                        faceapi.draw.drawDetections(canvas, resizedDetections);
+                        faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
+                    }
+                };
+
+                video.addEventListener('play', () => {
+                    setInterval(detect, 100);
+                });
+            };
+
+            handleVideoPlay();
+        }
+    }, [modelsLoaded]);
+
+
+    // const [connection, setConnection] = useState<LiveClient | null>(null);
   // const [connectionState, setConnectionState] = useState<LiveConnectionState>(
   //   LiveConnectionState.CLOSED
   // );
