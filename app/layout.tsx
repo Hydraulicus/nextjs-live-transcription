@@ -8,6 +8,7 @@ import { MicrophoneContextProvider } from "./context/MicrophoneContextProvider";
 import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
+import {FaceApiContextProvider} from "@/app/context/FaceApiContextProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 const favorit = localFont({
@@ -45,9 +46,11 @@ export default function RootLayout({
           inter.className
         )}`}
       >
-        <MicrophoneContextProvider>
-          <DeepgramContextProvider>{children}</DeepgramContextProvider>
-        </MicrophoneContextProvider>
+        <FaceApiContextProvider>
+          <MicrophoneContextProvider>
+            <DeepgramContextProvider>{children}</DeepgramContextProvider>
+          </MicrophoneContextProvider>
+        </FaceApiContextProvider>
       </body>
     </html>
   );

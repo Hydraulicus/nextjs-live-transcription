@@ -12,6 +12,7 @@ import {
   MicrophoneState,
   useMicrophone,
 } from "../context/MicrophoneContextProvider";
+import {useFaceApi} from "../context/FaceApiContextProvider"
 import Visualizer from "./Visualizer";
 
 const App: () => JSX.Element = () => {
@@ -21,6 +22,7 @@ const App: () => JSX.Element = () => {
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, microphoneState } =
     useMicrophone();
+  const {outputCanvas} = useFaceApi();
   const captionTimeout = useRef<any>();
   const keepAliveInterval = useRef<any>();
 
@@ -115,7 +117,7 @@ const App: () => JSX.Element = () => {
   return (
       <div className="flex h-full flex-col gap-6">
         <div className="flex flex-1 items-center justify-center bg-pink-500 p-2">
-          <div className="max-w-3xl bg-emerald-600">here camera output</div>
+          <div className="max-w-3xl bg-emerald-600">{outputCanvas}</div>
         </div>
         <div className="flex flex-1 flex-col items-center justify-center bg-green-500 p-2 ">
           <div className="max-w-3xl bg-amber-700 h-5">strip of miles are here</div>
