@@ -1,21 +1,12 @@
 "use client";
 
-// import {
-//   createClient,
-//   LiveClient,
-//   LiveConnectionState,
-//   LiveTranscriptionEvents,
-//   type LiveSchema,
-//   type LiveTranscriptionEvent,
-// } from "@deepgram/sdk";
-
 import {
-  createContext,
-  useContext,
-  useState,
-  ReactNode,
-  ReactElement,
-  FunctionComponent, useEffect, useRef, forwardRef,
+    createContext,
+    useContext,
+    useState,
+    ReactNode,
+    ReactElement,
+    FunctionComponent, useEffect, useRef, forwardRef, SetStateAction, Dispatch, useCallback, useReducer,
 } from "react";
 
 import * as faceapi from 'face-api.js';
@@ -27,6 +18,9 @@ interface FaceApiContextType {
   // connectionState: LiveConnectionState;
   outputCanvas: ReactElement
 }
+
+const MODEL_URL = '/models';
+const minProbability = 0.25
 
 const FaceApiContext = createContext<FaceApiContextType | undefined>(
     undefined
@@ -44,9 +38,15 @@ const VideoBlock = forwardRef<RefVideo, any>(function videoLayout(props, ref) {
     }
 )
 const CanvasBlock = forwardRef<RefCanvas, any>(function canvasLayout(props, ref) {
-      return <canvas ref={ref} {...props}/>
+      return <canvas ref={ref} {...props} style={{border: "2px red solid"}}/>
     }
 )
+
+type FaceExpressionLabel = (typeof faceapi.FACE_EXPRESSION_LABELS)[number]; // FACE_EXPRESSION_LABELS = ['neutral', 'happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised']
+
+function reducer (curExpr: string, newExpr: string) {
+    return curExpr !== newExpr ? newExpr : curExpr
+}
 
 const FaceApiContextProvider: FunctionComponent<
     FaceApiContextProviderProps
@@ -54,19 +54,13 @@ const FaceApiContextProvider: FunctionComponent<
   const videoRef = useRef<HTMLVideoElement>();
   const canvasRef = useRef();
   const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [expression, setExpression]: [FaceExpressionLabel, Dispatch<SetStateAction<FaceExpressionLabel>>] = useReducer<FaceExpressionLabel>(reducer, 'neutral' )
 
     useEffect(() => {
-        // Load models
-        const loadModels = async () => {
-            const MODEL_URL = '/models';
-            await faceapi.loadSsdMobilenetv1Model(MODEL_URL);
-            await faceapi.loadFaceLandmarkModel(MODEL_URL);
-            await faceapi.loadFaceExpressionModel(MODEL_URL);
-            setModelsLoaded(true);
-        };
+        console.log(' ====> expression =', expression)
+    }, [expression]);
 
-        loadModels();
-
+    useEffect(() => {
         // Access the webcam
         const startVideo = async () => {
             try {
@@ -77,7 +71,12 @@ const FaceApiContextProvider: FunctionComponent<
             }
         };
 
-          startVideo();
+        Promise.all([
+                faceapi.loadSsdMobilenetv1Model(MODEL_URL),
+                faceapi.loadFaceLandmarkModel(MODEL_URL),
+                faceapi.loadFaceExpressionModel(MODEL_URL),
+        ]).then(() => { setModelsLoaded(true); startVideo(); });
+
     }, []);
 
     useEffect(() => {
@@ -87,35 +86,31 @@ const FaceApiContextProvider: FunctionComponent<
                 const video = videoRef.current;
 
                 const detect = async () => {
-                    // const detections = await faceapi.detectSingleFace(video)
-                    //     .withFaceLandmarks()
-                    //     .withFaceDescriptor()
 
-
-                    // const detections = await faceapi.detectAllFaces(video)
-                    //     .withFaceLandmarks()
-                    //     .withFaceDescriptors();
-
-                    const detections = await faceapi.detectSingleFace(video)
+                    const detection = await faceapi.detectSingleFace(video)
                         .withFaceLandmarks()
                         // .withFaceDescriptor()
                         .withFaceExpressions()
                     const canvas = canvasRef.current;
 
                     faceapi.matchDimensions(canvas, {
-                        width: video.videoWidth,
-                        height: video.videoHeight
+                        // TODO make responsive scaling
+                        width: video.videoWidth / 2,
+                        height: video.videoHeight / 2
                     });
-                    if (detections) {
-                        console.log(' detections = ', detections.expressions);
-                        const resizedDetections = faceapi.resizeResults(detections, {
-                            width: video.videoWidth,
-                            height: video.videoHeight
+                    if (detection) {
+                        setExpression(detection.expressions.asSortedArray()[0].expression);
+
+                        // TODO make responsive scaling
+                        const resizedDetections = faceapi.resizeResults(detection, {
+                            width: video.videoWidth / 2,
+                            height: video.videoHeight / 2
                         });
 
                         canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
                         faceapi.draw.drawDetections(canvas, resizedDetections);
-                        faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
+                        // faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
+                        faceapi.draw.drawFaceExpressions(canvas, resizedDetections, minProbability)
                     }
                 };
 
@@ -128,43 +123,13 @@ const FaceApiContextProvider: FunctionComponent<
         }
     }, [modelsLoaded]);
 
-
-    // const [connection, setConnection] = useState<LiveClient | null>(null);
-  // const [connectionState, setConnectionState] = useState<LiveConnectionState>(
-  //   LiveConnectionState.CLOSED
-  // );
-
-  // const connectToDeepgram = async (options: LiveSchema, endpoint?: string) => {
-  //   const key = await getApiKey();
-  //   const deepgram = createClient(key);
-  //
-  //   const conn = deepgram.listen.live(options, endpoint);
-  //
-  //   conn.addListener(LiveTranscriptionEvents.Open, () => {
-  //     setConnectionState(LiveConnectionState.OPEN);
-  //   });
-  //
-  //   conn.addListener(LiveTranscriptionEvents.Close, () => {
-  //     setConnectionState(LiveConnectionState.CLOSED);
-  //   });
-  //
-  //   setConnection(conn);
-  // };
-
-  // const disconnectFromDeepgram = async () => {
-  //   if (connection) {
-  //     connection.finish();
-  //     setConnection(null);
-  //   }
-  // };
-
-  // const outputCanvas = videoBlockLayout({videoRef, canvasRef})
-  // const outputCanvas = (videoRef ?? <VideoBlockLayout ref={videoRef} />) || <span>videoRef is not ready yet</span>
   const outputCanvas = <div>
       <VideoBlock ref={videoRef} id="outputVideo" />
-      <CanvasBlock ref={canvasRef} id="outputCanvas" />
+      <CanvasBlock ref={canvasRef} id="outputCanvas" width="320px" height="200px"/>
   </div>
 
+    // TODO optimize rerenderings
+    console.log(' rerender !!!!!')
 
   return (
       <FaceApiContext.Provider
