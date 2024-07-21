@@ -44,7 +44,7 @@ const CanvasBlock = forwardRef<RefCanvas, any>(function canvasLayout(props, ref)
 
 type FaceExpressionLabel = (typeof faceapi.FACE_EXPRESSION_LABELS)[number]; // FACE_EXPRESSION_LABELS = ['neutral', 'happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised']
 
-function reducer (curExpr: string, newExpr: string) {
+function reducer (curExpr: FaceExpressionLabel, newExpr: FaceExpressionLabel) {
     return curExpr !== newExpr ? newExpr : curExpr
 }
 
@@ -54,7 +54,7 @@ const FaceApiContextProvider: FunctionComponent<
   const videoRef = useRef<HTMLVideoElement>();
   const canvasRef = useRef();
   const [modelsLoaded, setModelsLoaded] = useState(false);
-  const [expression, setExpression]: [FaceExpressionLabel, Dispatch<SetStateAction<FaceExpressionLabel>>] = useReducer<FaceExpressionLabel>(reducer, 'neutral' )
+  const [expression, setExpression]: [FaceExpressionLabel, Dispatch<FaceExpressionLabel>] = useReducer(reducer, 'neutral' )
 
     useEffect(() => {
         console.log(' ====> expression =', expression)
