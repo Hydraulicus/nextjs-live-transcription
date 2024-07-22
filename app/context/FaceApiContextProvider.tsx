@@ -6,7 +6,7 @@ import {
     useState,
     ReactNode,
     ReactElement,
-    FunctionComponent, useEffect, useRef, forwardRef, SetStateAction, Dispatch, useCallback, useReducer,
+    FunctionComponent, useEffect, useRef, forwardRef, Dispatch, useReducer,
 } from "react";
 
 import * as faceapi from 'face-api.js';
@@ -21,6 +21,12 @@ interface FaceApiContextType {
 
 const MODEL_URL = '/models';
 const minProbability = 0.25
+const FPS = 10;
+const tik = 1000 / FPS;
+const defSize = {
+    width: 320,
+    height: 200
+}
 
 const FaceApiContext = createContext<FaceApiContextType | undefined>(
     undefined
@@ -87,35 +93,32 @@ const FaceApiContextProvider: FunctionComponent<
 
                 const detect = async () => {
 
+                    const size = {
+                        width: (video.videoWidth / 2),
+                        height: (video.videoHeight / 2)
+                    } || defSize;
+
                     const detection = await faceapi.detectSingleFace(video)
                         .withFaceLandmarks()
                         // .withFaceDescriptor()
                         .withFaceExpressions()
                     const canvas = canvasRef.current;
 
-                    faceapi.matchDimensions(canvas, {
-                        // TODO make responsive scaling
-                        width: video.videoWidth / 2,
-                        height: video.videoHeight / 2
-                    });
+                    faceapi.matchDimensions(canvas, {...size});
                     if (detection) {
                         setExpression(detection.expressions.asSortedArray()[0].expression);
 
-                        // TODO make responsive scaling
-                        const resizedDetections = faceapi.resizeResults(detection, {
-                            width: video.videoWidth / 2,
-                            height: video.videoHeight / 2
-                        });
+                        const resizedDetections = faceapi.resizeResults(detection, {...size});
 
                         canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
                         faceapi.draw.drawDetections(canvas, resizedDetections);
-                        // faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
+                        faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
                         faceapi.draw.drawFaceExpressions(canvas, resizedDetections, minProbability)
                     }
                 };
 
                 video.addEventListener('play', () => {
-                    setInterval(detect, 100);
+                    setInterval(detect, tik);
                 });
             };
 
@@ -127,9 +130,6 @@ const FaceApiContextProvider: FunctionComponent<
       <VideoBlock ref={videoRef} id="outputVideo" />
       <CanvasBlock ref={canvasRef} id="outputCanvas" width="320px" height="200px"/>
   </div>
-
-    // TODO optimize rerenderings
-    console.log(' rerender !!!!!')
 
   return (
       <FaceApiContext.Provider
