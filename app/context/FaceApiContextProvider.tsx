@@ -58,7 +58,7 @@ const FaceApiContextProvider: FunctionComponent<
     FaceApiContextProviderProps
 > = ({children}) => {
   const videoRef = useRef<HTMLVideoElement>();
-  const canvasRef = useRef();
+  const canvasRef = useRef<HTMLCanvasElement>();
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [expression, setExpression]: [FaceExpressionLabel, Dispatch<FaceExpressionLabel>] = useReducer(reducer, 'neutral' )
 
@@ -86,13 +86,15 @@ const FaceApiContextProvider: FunctionComponent<
     }, []);
 
     useEffect(() => {
-        if (modelsLoaded && videoRef && videoRef.current && canvasRef && canvasRef.current) {
+        if (modelsLoaded && videoRef && canvasRef) {
             // Detect faces in the video stream
             const handleVideoPlay = () => {
                 const video = videoRef.current;
+                if (!video) {return}
 
-                const detect = async () => {
+                    const detect = async () => {
 
+                    if (!videoRef || !videoRef.current) { return }
                     const size = {
                         width: (video.videoWidth / 2),
                         height: (video.videoHeight / 2)
@@ -103,14 +105,18 @@ const FaceApiContextProvider: FunctionComponent<
                         // .withFaceDescriptor()
                         .withFaceExpressions()
                     const canvas = canvasRef.current;
+                    if (!canvas) {return}
 
                     faceapi.matchDimensions(canvas, {...size});
-                    if (detection) {
+                    if (detection && canvas) {
                         setExpression(detection.expressions.asSortedArray()[0].expression);
 
                         const resizedDetections = faceapi.resizeResults(detection, {...size});
 
-                        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                        const context = canvas.getContext('2d');
+                        if (context == null) throw new Error('Could not get context');
+                        context.clearRect(0, 0, canvas.width, canvas.height);
+
                         faceapi.draw.drawDetections(canvas, resizedDetections);
                         faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
                         faceapi.draw.drawFaceExpressions(canvas, resizedDetections, minProbability)
