@@ -27,14 +27,8 @@ const App: () => JSX.Element = () => {
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, microphoneState } = useMicrophone();
   const {outputCanvas, modelsLoaded,
-    // onExpression,
-    // onExpressionChange,
-    //   onModelsLoaded,
-
-    onModelsLoadedRef,
-    onExpressionChangRef,
-
-      // registerCallback
+    onModelsLoaded,
+    onExpressionChange,
   } = useFaceApi();
   const captionTimeout = useRef<any>();
   const keepAliveInterval = useRef<any>();
@@ -45,21 +39,11 @@ const App: () => JSX.Element = () => {
   }, []);
 
   useEffect(() => {
-    // console.log(' loading = ', modelsLoaded)
-    onModelsLoadedRef.current = ( () => { console.log(' Models loaded');})
-  }, [onModelsLoadedRef])
+    onModelsLoaded( () => { console.log(' Models loaded');})
+  }, [onModelsLoaded])
   useEffect(() => {
-    // console.log(' loading = ', modelsLoaded)
-    onExpressionChangRef.current = ( (expression: FaceExpressionLabel) => { console.log(' onExpression is called from App', expression);})
-  }, [onExpressionChangRef])
-  // useEffect(() => {
-  //   // console.log(' loading = ', modelsLoaded)
-  //   registerCallback( () => { console.log(' onExpression is called from App');})
-  // }, [registerCallback])
-  // useEffect(() => {
-  //   console.log(' loading = ', modelsLoaded)
-  //   onExpression( () => { console.log(' onExpression is called from App');})
-  // }, [modelsLoaded])
+    onExpressionChange((expression: FaceExpressionLabel) => { console.log(' onExpression is called from App', expression);})
+  }, [onExpressionChange])
 
   useEffect(() => {
     if (microphoneState === MicrophoneState.Ready) {
