@@ -6,26 +6,30 @@ import {
     useState,
     ReactNode,
     ReactElement,
-    FunctionComponent, useEffect, useRef, forwardRef, Dispatch, useReducer,
+    FunctionComponent, useEffect, useRef, forwardRef, Dispatch, useReducer, MutableRefObject,
 } from "react";
 
 import * as faceapi from 'face-api.js';
 
-interface FaceApiContextType {
-  // connection: LiveClient | null;
-  // connectToDeepgram: (options: LiveSchema, endpoint?: string) => Promise<void>;
-  // disconnectFromDeepgram: () => void;
-  // connectionState: LiveConnectionState;
-  outputCanvas: ReactElement
-}
-
 const MODEL_URL = '/models';
-const minProbability = 0.25
+const minProbability = 0.5
 const FPS = 10;
 const tik = 1000 / FPS;
 const defSize = {
     width: 320,
     height: 200
+}
+
+type OnExpressionChange = (arg0: string) => void
+type OnModelsLoaded = () => void
+
+interface FaceApiContextType {
+    outputCanvas: ReactElement
+    modelsLoaded: boolean
+    onModelsLoadedRef: MutableRefObject<OnModelsLoaded | null>
+    onExpressionChangRef: MutableRefObject<OnExpressionChange | null>
+    // onModelsLoaded: MutableRefObject<OnModelsLoaded>
+    // onExpressionChange: MutableRefObject<OnExpression>
 }
 
 const FaceApiContext = createContext<FaceApiContextType | undefined>(
@@ -38,32 +42,38 @@ interface FaceApiContextProviderProps {
 
 type RefVideo = HTMLVideoElement | undefined;
 type RefCanvas = HTMLCanvasElement | undefined;
+type FaceExpressionLabel = (typeof faceapi.FACE_EXPRESSION_LABELS)[number]; // FACE_EXPRESSION_LABELS = ['neutral', 'happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised']
 
 const VideoBlock = forwardRef<RefVideo, any>(function videoLayout(props, ref) {
+    // TODO refine size settings
       return <video ref={ref} autoPlay muted width="320" height="200" {...props}/>
     }
 )
 const CanvasBlock = forwardRef<RefCanvas, any>(function canvasLayout(props, ref) {
+    // TODO take styles away
       return <canvas ref={ref} {...props} style={{border: "2px red solid"}}/>
     }
 )
-
-type FaceExpressionLabel = (typeof faceapi.FACE_EXPRESSION_LABELS)[number]; // FACE_EXPRESSION_LABELS = ['neutral', 'happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised']
 
 function reducer (curExpr: FaceExpressionLabel, newExpr: FaceExpressionLabel) {
     return curExpr !== newExpr ? newExpr : curExpr
 }
 
-const FaceApiContextProvider: FunctionComponent<
-    FaceApiContextProviderProps
-> = ({children}) => {
+const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = ({children}) => {
   const videoRef = useRef<HTMLVideoElement>();
   const canvasRef = useRef<HTMLCanvasElement>();
-  const [modelsLoaded, setModelsLoaded] = useState(false);
+
+    const onExpressionChangRef = useRef<OnExpressionChange | null>(null);
+    const onModelsLoadedRef = useRef<OnModelsLoaded | null>(null);
+
+
+
+    const [modelsLoaded, setModelsLoaded] = useState(false);
   const [expression, setExpression]: [FaceExpressionLabel, Dispatch<FaceExpressionLabel>] = useReducer(reducer, 'neutral' )
 
     useEffect(() => {
         console.log(' ====> expression =', expression)
+        onExpressionChangRef.current && onExpressionChangRef.current(expression);
     }, [expression]);
 
     useEffect(() => {
@@ -81,7 +91,11 @@ const FaceApiContextProvider: FunctionComponent<
                 faceapi.loadSsdMobilenetv1Model(MODEL_URL),
                 faceapi.loadFaceLandmarkModel(MODEL_URL),
                 faceapi.loadFaceExpressionModel(MODEL_URL),
-        ]).then(() => { setModelsLoaded(true); startVideo(); });
+        ]).then(() => {
+            setModelsLoaded(true);
+            onModelsLoadedRef.current && onModelsLoadedRef.current();
+            startVideo();
+        });
 
     }, []);
 
@@ -110,6 +124,8 @@ const FaceApiContextProvider: FunctionComponent<
                     faceapi.matchDimensions(canvas, {...size});
                     if (detection && canvas) {
                         setExpression(detection.expressions.asSortedArray()[0].expression);
+                        // onExpression('!');
+                        // if (callback) { callback(); }
 
                         const resizedDetections = faceapi.resizeResults(detection, {...size});
 
@@ -145,6 +161,13 @@ const FaceApiContextProvider: FunctionComponent<
             // disconnectFromDeepgram,
             // connectionState,
             outputCanvas,
+            modelsLoaded,
+              // onModelsLoaded: onModelsLoadedRef,
+              // onExpressionChange: expressionRef,
+              onModelsLoadedRef,
+              onExpressionChangRef,
+              // registerCallback
+              // callbackRef: expressionRef
           }}
       >
         {children}
@@ -168,4 +191,5 @@ export {
   // LiveConnectionState,
   // LiveTranscriptionEvents,
   // type LiveTranscriptionEvent,
+    type FaceExpressionLabel
 };

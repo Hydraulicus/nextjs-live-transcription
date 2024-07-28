@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import {useAppStore} from "@/app/store/app-store-provider";
 import {
   LiveConnectionState,
   LiveTranscriptionEvent,
@@ -12,17 +13,29 @@ import {
   MicrophoneState,
   useMicrophone,
 } from "../context/MicrophoneContextProvider";
-import {useFaceApi} from "../context/FaceApiContextProvider"
+import {FaceExpressionLabel, useFaceApi} from "../context/FaceApiContextProvider"
 import Visualizer from "./Visualizer";
 
 const App: () => JSX.Element = () => {
+
+  // TODO remove. Save  caption by setText of useAppStore.
   const [caption, setCaption] = useState<string | undefined>(
     "Powered by Deepgram"
   );
+
+  const {loading, text, setText} = useAppStore((state) => state);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
-  const { setupMicrophone, microphone, startMicrophone, microphoneState } =
-    useMicrophone();
-  const {outputCanvas} = useFaceApi();
+  const { setupMicrophone, microphone, startMicrophone, microphoneState } = useMicrophone();
+  const {outputCanvas, modelsLoaded,
+    // onExpression,
+    // onExpressionChange,
+    //   onModelsLoaded,
+
+    onModelsLoadedRef,
+    onExpressionChangRef,
+
+      // registerCallback
+  } = useFaceApi();
   const captionTimeout = useRef<any>();
   const keepAliveInterval = useRef<any>();
 
@@ -30,6 +43,23 @@ const App: () => JSX.Element = () => {
     setupMicrophone();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    // console.log(' loading = ', modelsLoaded)
+    onModelsLoadedRef.current = ( () => { console.log(' Models loaded');})
+  }, [onModelsLoadedRef])
+  useEffect(() => {
+    // console.log(' loading = ', modelsLoaded)
+    onExpressionChangRef.current = ( (expression: FaceExpressionLabel) => { console.log(' onExpression is called from App', expression);})
+  }, [onExpressionChangRef])
+  // useEffect(() => {
+  //   // console.log(' loading = ', modelsLoaded)
+  //   registerCallback( () => { console.log(' onExpression is called from App');})
+  // }, [registerCallback])
+  // useEffect(() => {
+  //   console.log(' loading = ', modelsLoaded)
+  //   onExpression( () => { console.log(' onExpression is called from App');})
+  // }, [modelsLoaded])
 
   useEffect(() => {
     if (microphoneState === MicrophoneState.Ready) {
