@@ -6,7 +6,13 @@ import {
     useState,
     ReactNode,
     ReactElement,
-    FunctionComponent, useEffect, useRef, forwardRef, Dispatch, useReducer, MutableRefObject, useCallback,
+    FunctionComponent,
+    useEffect,
+    useRef,
+    forwardRef,
+    Dispatch,
+    useReducer,
+    useCallback,
 } from "react";
 
 import * as faceapi from 'face-api.js';
@@ -30,24 +36,24 @@ interface FaceApiContextType {
     onExpressionChange: (callback: OnExpressionChange) => void;
 }
 
-const FaceApiContext = createContext<FaceApiContextType | undefined>(undefined);
-
 interface FaceApiContextProviderProps {
-  children: ReactNode;
+    children: ReactNode;
 }
 
 type RefVideo = HTMLVideoElement | undefined;
 type RefCanvas = HTMLCanvasElement | undefined;
 type FaceExpressionLabel = (typeof faceapi.FACE_EXPRESSION_LABELS)[number]; // FACE_EXPRESSION_LABELS = ['neutral', 'happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised']
 
+const FaceApiContext = createContext<FaceApiContextType | undefined>(undefined);
+
 const VideoBlock = forwardRef<RefVideo, any>(function videoLayout(props, ref) {
-    // TODO refine size settings
-      return <video ref={ref} autoPlay muted width="320" height="200" {...props}/>
+        // TODO refine size settings
+        return <video ref={ref} autoPlay muted width="320" height="200" {...props}/>
     }
 )
 const CanvasBlock = forwardRef<RefCanvas, any>(function canvasLayout(props, ref) {
-    // TODO take styles away
-      return <canvas ref={ref} {...props} style={{border: "2px red solid"}}/>
+        // TODO take styles away
+        return <canvas ref={ref} {...props} style={{border: "2px red solid"}}/>
     }
 )
 
@@ -56,8 +62,8 @@ function reducer (curExpr: FaceExpressionLabel, newExpr: FaceExpressionLabel) {
 }
 
 const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = ({children}) => {
-  const videoRef = useRef<HTMLVideoElement>();
-  const canvasRef = useRef<HTMLCanvasElement>();
+    const videoRef = useRef<HTMLVideoElement>();
+    const canvasRef = useRef<HTMLCanvasElement>();
 
     const onModelsLoadedRef = useRef<OnModelsLoaded | null>(null);
     const onExpressionChangRef = useRef<OnExpressionChange | null>(null);
@@ -73,10 +79,8 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
         }, []
     ) ;
 
-
-
     const [modelsLoaded, setModelsLoaded] = useState(false);
-  const [expression, setExpression]: [FaceExpressionLabel, Dispatch<FaceExpressionLabel>] = useReducer(reducer, 'neutral' )
+    const [expression, setExpression]: [FaceExpressionLabel, Dispatch<FaceExpressionLabel>] = useReducer(reducer, 'neutral' )
 
     useEffect(() => {
         onExpressionChangRef.current && onExpressionChangRef.current(expression);
@@ -94,9 +98,9 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
         };
 
         Promise.all([
-                faceapi.loadSsdMobilenetv1Model(MODEL_URL),
-                faceapi.loadFaceLandmarkModel(MODEL_URL),
-                faceapi.loadFaceExpressionModel(MODEL_URL),
+            faceapi.loadSsdMobilenetv1Model(MODEL_URL),
+            faceapi.loadFaceLandmarkModel(MODEL_URL),
+            faceapi.loadFaceExpressionModel(MODEL_URL),
         ]).then(() => {
             setModelsLoaded(true);
             onModelsLoadedRef.current && onModelsLoadedRef.current();
@@ -112,7 +116,7 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
                 const video = videoRef.current;
                 if (!video) {return}
 
-                    const detect = async () => {
+                const detect = async () => {
 
                     if (!videoRef || !videoRef.current) { return }
                     const size = {
@@ -152,37 +156,37 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
         }
     }, [modelsLoaded]);
 
-  const outputCanvas = <div>
-      <VideoBlock ref={videoRef} id="outputVideo" />
-      <CanvasBlock ref={canvasRef} id="outputCanvas" width="320px" height="200px"/>
-  </div>
+    const outputCanvas = <div>
+        <VideoBlock ref={videoRef} id="outputVideo" />
+        <CanvasBlock ref={canvasRef} id="outputCanvas" width="320px" height="200px"/>
+    </div>
 
-  return (
-      <FaceApiContext.Provider
-          value={{
-            outputCanvas,
-            modelsLoaded,
-            onModelsLoaded,
-            onExpressionChange,
-          }}
-      >
-        {children}
-      </FaceApiContext.Provider>
-  );
+    return (
+        <FaceApiContext.Provider
+            value={{
+                outputCanvas,
+                modelsLoaded,
+                onModelsLoaded,
+                onExpressionChange,
+            }}
+        >
+            {children}
+        </FaceApiContext.Provider>
+    );
 };
 
 function useFaceApi(): FaceApiContextType {
-  const context = useContext(FaceApiContext);
-  if (context === undefined) {
-    throw new Error(
-        "useFaceApi must be used within a FaceApiContextProvider"
-    );
-  }
-  return context;
+    const context = useContext(FaceApiContext);
+    if (context === undefined) {
+        throw new Error(
+            "useFaceApi must be used within a FaceApiContextProvider"
+        );
+    }
+    return context;
 }
 
 export {
-  FaceApiContextProvider,
-  useFaceApi,
-  type FaceExpressionLabel
+    FaceApiContextProvider,
+    useFaceApi,
+    type FaceExpressionLabel
 };
