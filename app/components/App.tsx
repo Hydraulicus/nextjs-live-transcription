@@ -15,6 +15,7 @@ import {
 } from "../context/MicrophoneContextProvider";
 import {FaceExpressionLabel, useFaceApi} from "../context/FaceApiContextProvider"
 import Visualizer from "./Visualizer";
+import {Icon} from "@/app/components/Icon";
 
 const App: () => JSX.Element = () => {
 
@@ -131,10 +132,21 @@ const App: () => JSX.Element = () => {
   return (
       <div className="flex h-full flex-col gap-6">
         <div className="flex flex-1 items-center justify-center bg-pink-500 p-2">
-          <div className="max-w-3xl bg-emerald-600">{outputCanvas}</div>
+          <div className="max-w-3xl bg-emerald-600 relative">{outputCanvas}</div>
         </div>
         <div className="flex flex-1 flex-col items-center justify-center bg-green-500 p-2 ">
-          <div className="max-w-3xl bg-amber-700 h-5">strip of miles are here</div>
+          <div className="max-w-3xl h-15">
+            {/*<svg className="inline self-center w-[3em] h-[3em]">*/}
+            {/*  <use href={`sprite_flat.svg#confounded-face`}/>*/}
+            {/*</svg>*/}
+            <Icon className="h-[2em] w-[2em] hover:animate-spin" name="confounded-face" />
+            <Icon className="h-[3em] w-[2em] hover:animate-bounce" name="fearful-face" />
+            <Icon className="h-[2em] w-[2em] hover:animate-pulse" name="hushed-face" />
+            <Icon className="h-[2em] w-[2em] hover:animate-[wiggle_1s_ease-in-out_infinite]" name="slightly-frowning-face" />
+            <Icon className="h-[2em] w-[2em] transform transition duration-500 hover:scale-150" name="slightly-smiling-face" />
+
+
+          </div>
           <div className="bottom-[8rem] inset-x-0 max-w-4xl mx-auto text-center bg-cyan-600">{caption} </div>
         </div>
 

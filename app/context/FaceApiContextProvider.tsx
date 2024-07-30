@@ -53,7 +53,7 @@ const VideoBlock = forwardRef<RefVideo, any>(function videoLayout(props, ref) {
 )
 const CanvasBlock = forwardRef<RefCanvas, any>(function canvasLayout(props, ref) {
         // TODO take styles away
-        return <canvas ref={ref} {...props} style={{border: "2px red solid"}}/>
+        return <canvas ref={ref} {...props}/>
     }
 )
 
@@ -126,7 +126,6 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
 
                     const detection = await faceapi.detectSingleFace(video)
                         .withFaceLandmarks()
-                        // .withFaceDescriptor()
                         .withFaceExpressions()
                     const canvas = canvasRef.current;
                     if (!canvas) {return}
@@ -142,7 +141,6 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
                         context.clearRect(0, 0, canvas.width, canvas.height);
 
                         faceapi.draw.drawDetections(canvas, resizedDetections);
-                        faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
                         faceapi.draw.drawFaceExpressions(canvas, resizedDetections, minProbability)
                     }
                 };
@@ -158,7 +156,7 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
 
     const outputCanvas = <div>
         <VideoBlock ref={videoRef} id="outputVideo" />
-        <CanvasBlock ref={canvasRef} id="outputCanvas" width="320px" height="200px"/>
+        <CanvasBlock ref={canvasRef} id="outputCanvas" width="320px" height="200px" style={{ position: "absolute", top: 0, left: 0}} />
     </div>
 
     return (
