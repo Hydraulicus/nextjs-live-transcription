@@ -89,8 +89,13 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
     useEffect(() => {
         // Access the webcam
         const startVideo = async () => {
+
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            const deviceId = videoDevices[videoDevices.length-1]?.deviceId;
+
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {deviceId} });
                 if (videoRef && videoRef.current) { videoRef.current.srcObject = stream; }
             } catch (err) {
                 console.error('Error accessing webcam:', err);
@@ -124,7 +129,8 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
                         height: (video.videoHeight / 2)
                     } || defSize;
 
-                    const detection = await faceapi.detectSingleFace(video)
+                    const detection = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options({minConfidence: 0.9}))
+                    // const detection = await faceapi.detectSingleFace(video)
                         .withFaceLandmarks()
                         .withFaceExpressions()
                     const canvas = canvasRef.current;
@@ -147,6 +153,7 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
 
                 video.addEventListener('play', () => {
                     setInterval(detect, tik);
+                    // requestAnimationFrame(detect)
                 });
             };
 

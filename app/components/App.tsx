@@ -17,6 +17,22 @@ import {FaceExpressionLabel, useFaceApi} from "../context/FaceApiContextProvider
 import Visualizer from "./Visualizer";
 import {Icon} from "@/app/components/Icon";
 
+const FACE_EXPRESSION_TIME = 750;
+
+const inputDebounce = (func: (...args: any[]) => void, timeout: number = 300) => {
+  let timer: number | undefined;
+
+  return (...args: any[]) => {
+    console.log(args[0]);
+    if (timer !== undefined) {
+      clearTimeout(timer);
+    }
+    timer = window.setTimeout(() => {
+      func.apply(this, args);
+    }, timeout);
+  };
+};
+
 const App: () => JSX.Element = () => {
 
   // TODO remove. Save  caption by setText of useAppStore.
@@ -42,9 +58,11 @@ const App: () => JSX.Element = () => {
   useEffect(() => {
     onModelsLoaded( () => { console.log(' Models loaded');})
   }, [onModelsLoaded])
-  useEffect(() => {
-    onExpressionChange((expression: FaceExpressionLabel) => { console.log(' onExpression is called from App', expression);})
-  }, [onExpressionChange])
+
+    onExpressionChange((expression: FaceExpressionLabel) => {
+      console.log(' onExpression is called from App', expression);
+      inputDebounce((expression: FaceExpressionLabel) => setText(text + `::${expression}:: `), FACE_EXPRESSION_TIME)(expression);
+    })
 
   useEffect(() => {
     if (microphoneState === MicrophoneState.Ready) {
@@ -61,8 +79,7 @@ const App: () => JSX.Element = () => {
   }, [microphoneState]);
 
   useEffect(() => {
-    if (!microphone) return;
-    if (!connection) return;
+    if (!microphone || !connection) return;
 
     const onData = (e: BlobEvent) => {
       // iOS SAFARI FIX:
@@ -129,6 +146,10 @@ const App: () => JSX.Element = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [microphoneState, connectionState]);
 
+  const parser = (text: string) => {
+
+  }
+
   return (
       <div className="flex h-full flex-col gap-6">
         <div className="flex flex-1 items-center justify-center bg-pink-500 p-2">
@@ -144,10 +165,14 @@ const App: () => JSX.Element = () => {
             <Icon className="h-[2em] w-[2em] hover:animate-pulse" name="hushed-face" />
             <Icon className="h-[2em] w-[2em] hover:animate-[wiggle_1s_ease-in-out_infinite]" name="slightly-frowning-face" />
             <Icon className="h-[2em] w-[2em] transform transition duration-500 hover:scale-150" name="slightly-smiling-face" />
+            {/*<Icon className="h-[2em] w-[2em] animate-in fade-in zoom-in-150 slide-in-from-top duration-1000" name="slightly-frowning-face" />*/}
 
 
           </div>
-          <div className="bottom-[8rem] inset-x-0 max-w-4xl mx-auto text-center bg-cyan-600">{caption} </div>
+          <div className="bottom-[8rem] inset-x-0 max-w-4xl mx-auto text-center bg-cyan-600">
+            {text}
+            <Icon className="h-[2em] w-[2em] animate-in fade-in zoom-in-150 slide-in-from-top duration-1000" name="slightly-frowning-face" />
+          </div>
         </div>
 
       </div>
