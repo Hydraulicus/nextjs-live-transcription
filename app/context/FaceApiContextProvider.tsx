@@ -13,6 +13,7 @@ import {
     Dispatch,
     useReducer,
     useCallback,
+    SyntheticEvent,
 } from "react";
 
 import * as faceapi from 'face-api.js';
@@ -48,7 +49,7 @@ const FaceApiContext = createContext<FaceApiContextType | undefined>(undefined);
 
 const VideoBlock = forwardRef<RefVideo, any>(function videoLayout(props, ref) {
         // TODO refine size settings
-        return <video ref={ref} autoPlay muted width="320" height="200" {...props}/>
+        return <video ref={ref} muted width="320" height="200" {...props}/>
     }
 )
 const CanvasBlock = forwardRef<RefCanvas, any>(function canvasLayout(props, ref) {
@@ -91,8 +92,10 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
         const startVideo = async () => {
 
             const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            const videoDevices = devices.filter(device => (device.kind === 'videoinput' && device.label.includes('USB')));
+            console.log(' videoDevices ', videoDevices)
             const deviceId = videoDevices[videoDevices.length-1]?.deviceId;
+            console.log(' deviceId= ', deviceId)
 
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: {deviceId} });
@@ -162,8 +165,11 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
     }, [modelsLoaded]);
 
     const outputCanvas = <div>
-        <VideoBlock ref={videoRef} id="outputVideo" />
-        <CanvasBlock ref={canvasRef} id="outputCanvas" width="320px" height="200px" style={{ position: "absolute", top: 0, left: 0}} />
+        {/* TODO remove in product - onClick and pointerEvents */}
+        <VideoBlock ref={videoRef} id="outputVideo"
+                    onClick={(e: SyntheticEvent<HTMLVideoElement>) => (e.target as HTMLVideoElement).play()}
+        />
+        <CanvasBlock ref={canvasRef} id="outputCanvas" width="320px" height="200px" style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none"}} />
     </div>
 
     return (

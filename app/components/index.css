@@ -1,0 +1,20 @@
+
+/* index.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer utilities {
+    .main {
+        @apply flex h-full flex-col gap-6 container  items-center justify-center
+    }
+    .textarea {
+        @apply block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500;
+    }
+
+    .emotion {
+        @apply h-[2em] w-[2em] animate-in fade-in zoom-in-150 slide-in-from-top duration-1000
+    }
+}
