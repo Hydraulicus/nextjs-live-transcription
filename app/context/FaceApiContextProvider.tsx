@@ -24,7 +24,7 @@ const FPS = 10;
 const tik = 1000 / FPS;
 const defSize = {
     width: 320,
-    height: 200
+    height: 240
 }
 
 type OnExpressionChange = (arg0: string) => void
@@ -48,12 +48,10 @@ type FaceExpressionLabel = (typeof faceapi.FACE_EXPRESSION_LABELS)[number]; // F
 const FaceApiContext = createContext<FaceApiContextType | undefined>(undefined);
 
 const VideoBlock = forwardRef<RefVideo, any>(function videoLayout(props, ref) {
-        // TODO refine size settings
-        return <video ref={ref} muted width="320" height="200" {...props}/>
+        return <video ref={ref} muted width="100%" {...props}/>
     }
 )
 const CanvasBlock = forwardRef<RefCanvas, any>(function canvasLayout(props, ref) {
-        // TODO take styles away
         return <canvas ref={ref} {...props}/>
     }
 )
@@ -128,9 +126,9 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
 
                     if (!videoRef || !videoRef.current) { return }
                     const size = {
-                        width: (video.videoWidth / 2),
-                        height: (video.videoHeight / 2)
-                    } || defSize;
+                        width: (video.clientWidth || defSize.width),
+                        height: (video.clientHeight || defSize.height)
+                    };
 
                     const detection = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options({minConfidence: 0.9}))
                     // const detection = await faceapi.detectSingleFace(video)
@@ -156,6 +154,7 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
 
                 video.addEventListener('play', () => {
                     setInterval(detect, tik);
+                    // TODO use requestAnimationFrame
                     // requestAnimationFrame(detect)
                 });
             };
@@ -164,12 +163,17 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
         }
     }, [modelsLoaded]);
 
-    const outputCanvas = <div>
+    const outputCanvas = <div id="outputCanvas" style={{width: "100%", aspectRatio: "4/3"}}>
         {/* TODO remove in product - onClick and pointerEvents */}
         <VideoBlock ref={videoRef} id="outputVideo"
+                    width="100%" height="100%"
                     onClick={(e: SyntheticEvent<HTMLVideoElement>) => (e.target as HTMLVideoElement).play()}
         />
-        <CanvasBlock ref={canvasRef} id="outputCanvas" width="320px" height="200px" style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none"}} />
+        <CanvasBlock
+            ref={canvasRef} id="outputCanvas"
+            width="100%" height="100%"
+            style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none"}}
+        />
     </div>
 
     return (
