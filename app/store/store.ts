@@ -14,7 +14,7 @@ export type AppActions = {
 export type AppStore = AppState & AppActions;
 
 export const defaultInitialState: AppState = {
-    loading: false,
+    loading: true,
     error: false,
     text: ''
 }
