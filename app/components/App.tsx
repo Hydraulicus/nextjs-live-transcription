@@ -167,7 +167,7 @@ const App: () => JSX.Element = () => {
         loading ?
             <LoadingModal/>
             :
-            <div className="main">
+            <div className="app">
 
                 <div className="flex flex-1 items-center justify-center bg-pink-500 p-2 max-w-md w-full">
                     <div className="bg-emerald-600 relative">{outputCanvas}</div>

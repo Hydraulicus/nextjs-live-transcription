@@ -4,8 +4,8 @@
 
 
 @layer utilities {
-    .main {
-        @apply flex h-full flex-col gap-6 container  items-center justify-center
+    .app {
+        @apply mx-auto flex h-full flex-col gap-6 container  items-center justify-center
     }
     .textarea {
         @apply block p-2.5 w-full h-[calc(100%-6rem)]
