@@ -19,7 +19,7 @@ import {Icon} from "@/app/components/Icon";
 import "./index.css";
 import {LoadingModal} from "@/app/components/LoadingModal";
 import Popover from "@/app/components/popOver/Popover";
-import {inputDebounce} from "@/app/components/helpers";
+import {animateIcon, inputDebounce} from "@/app/components/helpers";
 import {emoticonsIcon, FACE_EXPRESSION_TIME} from "@/app/components/const";
 
 const App: () => JSX.Element = () => {
@@ -73,7 +73,8 @@ const App: () => JSX.Element = () => {
 
     onExpressionChange((expression: FaceExpressionLabel) => {
         const onChange = ({text, expression}: { text: string, expression: FaceExpressionLabel }) => {
-            insertAtCursor({expression: emoticonsIcon[expression], textarea})
+            insertAtCursor({expression: emoticonsIcon[expression], textarea});
+            animateIcon(expression)
         }
         inputDebounce((expression: FaceExpressionLabel) => onChange({
             text,
@@ -176,19 +177,19 @@ const App: () => JSX.Element = () => {
                 <div className="grow flex flex-1 flex-col items-center justify-center bg-green-500 p-2 max-w-md w-full">
                     <div className="max-w-3xl h-15 shrink">
                         <Popover trigger="hover" content={<p className="content">Confounded</p>}>
-                            <Icon id="confounded-face-icon" className="emotionIcon" name="confounded-face"/>
+                            <Icon id="disgusted" className="emotionIcon" name="confounded-face"/>
                         </Popover>
                         <Popover trigger="hover" content={<p className="content">Fearful</p>}>
-                            <Icon className="emotionIcon" name="fearful-face"/>
+                            <Icon id="fearful" className="emotionIcon" name="fearful-face"/>
                         </Popover>
                         <Popover trigger="hover" content={<p className="content">Hushed</p>}>
-                            <Icon className="emotionIcon" name="hushed-face"/>
+                            <Icon id="surprised" className="emotionIcon" name="hushed-face"/>
                         </Popover>
                         <Popover trigger="hover" content={<p className="content">Slightly frowning</p>}>
-                            <Icon className="emotionIcon" name="slightly-frowning-face"/>
+                            <Icon id="sad" className="emotionIcon" name="slightly-frowning-face"/>
                         </Popover>
                         <Popover trigger="hover" content={<p className="content">Slightly smiling</p>}>
-                            <Icon className="emotionIcon" name="slightly-smiling-face"/>
+                            <Icon id="happy" className="emotionIcon" name="slightly-smiling-face"/>
                         </Popover>
 
                     </div>

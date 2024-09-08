@@ -17,6 +17,7 @@ import {
 } from "react";
 
 import * as faceapi from 'face-api.js';
+import {FaceExpressions} from "face-api.js/build/commonjs/faceExpressionNet/FaceExpressions";
 
 const MODEL_URL = '/models';
 const minProbability = 0.75
@@ -45,6 +46,8 @@ type RefVideo = HTMLVideoElement | undefined;
 type RefCanvas = HTMLCanvasElement | undefined;
 type FaceExpressionLabel = (typeof faceapi.FACE_EXPRESSION_LABELS)[number]; // FACE_EXPRESSION_LABELS = ['neutral', 'happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised']
 
+type Sorted = ReturnType<FaceExpressions["asSortedArray"]>
+
 const FaceApiContext = createContext<FaceApiContextType | undefined>(undefined);
 
 const VideoBlock = forwardRef<RefVideo, any>(function videoLayout(props, ref) {
@@ -56,8 +59,8 @@ const CanvasBlock = forwardRef<RefCanvas, any>(function canvasLayout(props, ref)
     }
 )
 
-function reducer (curExpr: FaceExpressionLabel, newExpr: FaceExpressionLabel) {
-    return curExpr !== newExpr ? newExpr : curExpr
+function reducer (curExpr: FaceExpressionLabel, newExpr: FaceExpressionLabel | null) {
+    return (newExpr && (curExpr !== newExpr)) ? newExpr : curExpr
 }
 
 const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = ({children}) => {
@@ -115,6 +118,11 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
 
     }, []);
 
+    function maxExceedingThreshold(arr: Sorted, threshold: number): boolean | null {
+        const thresholdValue = arr[1].probability + arr[1].probability * threshold;
+        return (arr[0].probability > thresholdValue) ? true : null;
+    }
+
     useEffect(() => {
         if (modelsLoaded && videoRef && canvasRef) {
             // Detect faces in the video stream
@@ -130,7 +138,7 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
                         height: (video.clientHeight || defSize.height)
                     };
 
-                    const detection = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options({minConfidence: 0.9}))
+                    const detection = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.8, maxResults: 1 }))
                         .withFaceLandmarks()
                         .withFaceExpressions()
                     const canvas = canvasRef.current;
@@ -138,7 +146,12 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
 
                     faceapi.matchDimensions(canvas, {...size});
                     if (detection && canvas) {
-                        setExpression(detection.expressions.asSortedArray()[0].expression);
+                        const sorted: Sorted = detection.expressions.asSortedArray();
+                        if (maxExceedingThreshold(sorted, 0.6)) {
+                        console.log(detection.expressions.asSortedArray()[0], detection.expressions.asSortedArray()[1]);
+
+                            setExpression(detection.expressions.asSortedArray()[0].expression);
+                        }
 
                         const resizedDetections = faceapi.resizeResults(detection, {...size});
 

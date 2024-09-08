@@ -30,7 +30,7 @@
     }
 
     .emotionIcon {
-        @apply h-[1.5em] w-[1.5em] mx-1
+        @apply h-[1.5em] w-[1.5em] mx-2
     }
     .emotion {
         @apply h-[2em] w-[2em] animate-in fade-in zoom-in-150 slide-in-from-top duration-1000
