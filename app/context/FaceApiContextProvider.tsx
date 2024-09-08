@@ -19,7 +19,9 @@ import {
 import * as faceapi from 'face-api.js';
 
 const MODEL_URL = '/models';
-const minProbability = 0.5
+const minProbability = 0.75
+const FPS = 10;
+const tik = 1000 / FPS;
 const defSize = {
     width: 320,
     height: 240
@@ -129,7 +131,6 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
                     };
 
                     const detection = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options({minConfidence: 0.9}))
-                    // const detection = await faceapi.detectSingleFace(video)
                         .withFaceLandmarks()
                         .withFaceExpressions()
                     const canvas = canvasRef.current;
@@ -148,6 +149,8 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
                         faceapi.draw.drawDetections(canvas, resizedDetections);
                         faceapi.draw.drawFaceExpressions(canvas, resizedDetections, minProbability)
                     }
+
+                    requestAnimationFrame(detect)
                 };
 
                 video.addEventListener('play', () => {
