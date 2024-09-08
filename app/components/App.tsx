@@ -1,6 +1,6 @@
 "use client";
 
-import React, {ReactNode, useEffect, useRef, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {useAppStore} from "@/app/store/app-store-provider";
 import {
     LiveConnectionState,
@@ -19,49 +19,10 @@ import {Icon} from "@/app/components/Icon";
 import "./index.css";
 import {LoadingModal} from "@/app/components/LoadingModal";
 import Popover from "@/app/components/popOver/Popover";
-
-const FACE_EXPRESSION_TIME = 250;
-
-// TODO move to const file
-const emoticonsName: { [KEY in FaceExpressionLabel]: string } = Object.freeze({
-    'neutral': 'neutral', // 😐
-    'happy': 'slightly-smiling-face', // 🙂
-    'sad': 'slightly-frowning-face', // 🙁
-    'angry': 'angry', //😠
-    'fearful': 'fearful-face', //😨
-    'disgusted': 'confounded-face', // 😖
-    'surprised': 'hushed-face' // 😯
-})
-const emoticonsIcon: { [KEY in FaceExpressionLabel]: string } = Object.freeze({
-    'neutral': '😐',
-    'happy': '🙂',
-    'sad': '🙁',
-    'angry': '😠',
-    'fearful': '😨',
-    'disgusted': '😖',
-    'surprised': '😯'
-})
-
-const inputDebounce = (func: (...args: any[]) => void, timeout: number = 200) => {
-    let timer: number | undefined;
-
-    return (...args: any[]) => {
-        if (timer !== undefined) {
-            clearTimeout(timer);
-        }
-        timer = window.setTimeout(() => {
-            func.apply(this, args);
-        }, timeout);
-    };
-};
+import {inputDebounce} from "@/app/components/helpers";
+import {emoticonsIcon, FACE_EXPRESSION_TIME} from "@/app/components/const";
 
 const App: () => JSX.Element = () => {
-
-    // TODO remove. Save  caption by setText of useAppStore.
-    const [caption, setCaption] = useState<string | undefined>('::happy::');
-    const [markup, setMarkup] = useState<ReactNode>();
-    const [composed, setComposed] = useState<string>();
-
 
     const {loading, text, setText, setLoading} = useAppStore((state) => state);
     const {connection, connectToDeepgram, connectionState} = useDeepgram();
@@ -71,7 +32,6 @@ const App: () => JSX.Element = () => {
         onModelsLoaded,
         onExpressionChange,
     } = useFaceApi();
-    const captionTimeout = useRef<any>();
     const keepAliveInterval = useRef<any>();
     const textarea = useRef<any>();
     const [selection, setSelection] = useState<{ start: number, end: number }>()
@@ -79,49 +39,13 @@ const App: () => JSX.Element = () => {
 
     useEffect(() => {
         setupMicrophone();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [setupMicrophone]);
 
     useEffect(() => {
         onModelsLoaded(() => { setLoading(false) })
-    }, [onModelsLoaded])
-
-    // function parsedText({ text }: { text: string }): ReactNode {
-    //   const cloneEmoIcon = (emotion: FaceExpressionLabel, key: string): ReactNode => <Icon className="emotion icon" name={emoticonsName[emotion]} key={key}/>
-    //   return text.split(/(::.*?::)/g).map((elem, i) => {
-    //     // console.log(' elem:', elem);
-    //     if (!elem
-    //         // don't show icon of "neutral"
-    //         && elem !== '::neutral::'
-    //     ) return null;
-    //     const emotion = elem.replace(/^::+|::+$/g, '')
-    //     // console.log(' emotion:', emotion);
-    //     if (emoticonsName[emotion as FaceExpressionLabel]) {
-    //       return cloneEmoIcon(emotion, `${emotion}-${i}`);
-    //     }
-    //     return <span key={`${elem}-${i}`}>{elem}</span>;
-    //   });
-    // }
-
-
-    // function parsedText({text}: { text: string }): ReactNode {
-    //     return text.split(/(::.*?::)/g).map((elem, i) => {
-    //         // console.log(' elem:', elem);
-    //         if (!elem
-    //             // don't show icon of "neutral"
-    //             && elem !== '::neutral::'
-    //         ) return null;
-    //         const emotion = elem.replace(/^::+|::+$/g, '')
-    //         // console.log(' emotion:', emotion);
-    //         if (emoticonsName[emotion as FaceExpressionLabel]) {
-    //             return emoticonsIcon[emotion];
-    //         }
-    //         return elem;
-    //     });
-    // }
+    }, [onModelsLoaded, setLoading])
 
     const onTextInput = (inp: React.ChangeEvent<HTMLTextAreaElement>) => {
-        // console.log(inp.target.selectionStart)
         setText(inp.target.value)
     }
 
@@ -129,7 +53,7 @@ const App: () => JSX.Element = () => {
         expression: FaceExpressionLabel,
         textarea: React.MutableRefObject<HTMLTextAreaElement>
     }) {
-
+        if (!(textarea && textarea.current)) { return }
         let cursorPos = textarea.current.selectionStart;
         let v = textarea.current.value;
         let textBefore = v.substring(0, cursorPos);
@@ -150,12 +74,7 @@ const App: () => JSX.Element = () => {
     onExpressionChange((expression: FaceExpressionLabel) => {
         const onChange = ({text, expression}: { text: string, expression: FaceExpressionLabel }) => {
             insertAtCursor({expression: emoticonsIcon[expression], textarea})
-            // setText(text + ` ${emoticonsIcon[expression]}`);
-            // setText(text + `::${expression}:: `);
-            // setMarkup(parsedText({text}))
-
         }
-        console.log(' onExpression is called from App', expression);
         inputDebounce((expression: FaceExpressionLabel) => onChange({
             text,
             expression
@@ -176,51 +95,51 @@ const App: () => JSX.Element = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [microphoneState]);
 
-    useEffect(() => {
-        if (!microphone || !connection) return;
-
-        const onData = (e: BlobEvent) => {
-            // iOS SAFARI FIX:
-            // Prevent packetZero from being sent. If sent at size 0, the connection will close.
-            if (e.data.size > 0) {
-                connection?.send(e.data);
-            }
-        };
-
-        const onTranscript = (data: LiveTranscriptionEvent) => {
-            const {is_final: isFinal, speech_final: speechFinal} = data;
-            let thisCaption = data.channel.alternatives[0].transcript;
-
-            console.log("thisCaption", thisCaption);
-            if (thisCaption !== "") {
-                console.log('thisCaption !== ""', thisCaption);
-                setCaption(thisCaption);
-            }
-
-            if (isFinal && speechFinal) {
-                clearTimeout(captionTimeout.current);
-                captionTimeout.current = setTimeout(() => {
-                    setCaption(undefined);
-                    clearTimeout(captionTimeout.current);
-                }, 3000);
-            }
-        };
-
-        if (connectionState === LiveConnectionState.OPEN) {
-            connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
-            microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
-
-            startMicrophone();
-        }
-
-        return () => {
-            // prettier-ignore
-            connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
-            microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
-            clearTimeout(captionTimeout.current);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [connectionState]);
+    // useEffect(() => {
+    //     if (!microphone || !connection) return;
+    //
+    //     const onData = (e: BlobEvent) => {
+    //         // iOS SAFARI FIX:
+    //         // Prevent packetZero from being sent. If sent at size 0, the connection will close.
+    //         if (e.data.size > 0) {
+    //             connection?.send(e.data);
+    //         }
+    //     };
+    //
+    //     const onTranscript = (data: LiveTranscriptionEvent) => {
+    //         const {is_final: isFinal, speech_final: speechFinal} = data;
+    //         let thisCaption = data.channel.alternatives[0].transcript;
+    //
+    //         console.log("thisCaption", thisCaption);
+    //         if (thisCaption !== "") {
+    //             console.log('thisCaption !== ""', thisCaption);
+    //             setCaption(thisCaption);
+    //         }
+    //
+    //         if (isFinal && speechFinal) {
+    //             clearTimeout(captionTimeout.current);
+    //             captionTimeout.current = setTimeout(() => {
+    //                 setCaption(undefined);
+    //                 clearTimeout(captionTimeout.current);
+    //             }, 3000);
+    //         }
+    //     };
+    //
+    //     if (connectionState === LiveConnectionState.OPEN) {
+    //         connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
+    //         microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
+    //
+    //         startMicrophone();
+    //     }
+    //
+    //     return () => {
+    //         // prettier-ignore
+    //         connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
+    //         microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
+    //         clearTimeout(captionTimeout.current);
+    //     };
+    //     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // }, [connectionState]);
 
     useEffect(() => {
         if (!connection) return;
@@ -273,9 +192,9 @@ const App: () => JSX.Element = () => {
                         </Popover>
 
                     </div>
-                    <div className="bottom-[8rem] inset-x-0 max-w-4xl mx-auto text-center bg-cyan-600">
-                        {markup}
-                    </div>
+                    {/*<div className="bottom-[8rem] inset-x-0 max-w-4xl mx-auto text-center bg-cyan-600">*/}
+                    {/*    {markup}*/}
+                    {/*</div>*/}
                     <div className="w-full h-full ">
                         <label htmlFor="message"
                                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your
