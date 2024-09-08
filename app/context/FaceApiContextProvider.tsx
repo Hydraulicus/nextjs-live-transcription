@@ -20,8 +20,6 @@ import * as faceapi from 'face-api.js';
 
 const MODEL_URL = '/models';
 const minProbability = 0.5
-const FPS = 10;
-const tik = 1000 / FPS;
 const defSize = {
     width: 320,
     height: 240
@@ -153,9 +151,7 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
                 };
 
                 video.addEventListener('play', () => {
-                    setInterval(detect, tik);
-                    // TODO use requestAnimationFrame
-                    // requestAnimationFrame(detect)
+                    requestAnimationFrame(detect)
                 });
             };
 
