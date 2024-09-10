@@ -13,11 +13,12 @@ import {
     Dispatch,
     useReducer,
     useCallback,
-    SyntheticEvent,
+    SyntheticEvent, useMemo,
 } from "react";
 
 import * as faceapi from 'face-api.js';
 import {FaceExpressions} from "face-api.js/build/commonjs/faceExpressionNet/FaceExpressions";
+import {debounceTime, Observable} from "rxjs";
 
 const MODEL_URL = '/models';
 const minProbability = 0.75
@@ -26,27 +27,28 @@ const tik = 1000 / FPS;
 const defSize = {
     width: 320,
     height: 240
-}
+};
+const THRESHOLD_TIME = 600;
 
 type OnExpressionChange = (arg0: string) => void
 type OnModelsLoaded = () => void
+type RefVideo = HTMLVideoElement | undefined;
+type RefCanvas = HTMLCanvasElement | undefined;
+type FaceExpressionLabel = (typeof faceapi.FACE_EXPRESSION_LABELS)[number]; // FACE_EXPRESSION_LABELS = ['neutral', 'happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised']
+
+type Sorted = ReturnType<FaceExpressions["asSortedArray"]>
 
 interface FaceApiContextType {
     outputCanvas: ReactElement
     modelsLoaded: boolean
     onModelsLoaded: (callback: OnModelsLoaded) => void
     onExpressionChange: (callback: OnExpressionChange) => void;
+    emojy$: Observable<FaceExpressionLabel>;
 }
 
 interface FaceApiContextProviderProps {
     children: ReactNode;
 }
-
-type RefVideo = HTMLVideoElement | undefined;
-type RefCanvas = HTMLCanvasElement | undefined;
-type FaceExpressionLabel = (typeof faceapi.FACE_EXPRESSION_LABELS)[number]; // FACE_EXPRESSION_LABELS = ['neutral', 'happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised']
-
-type Sorted = ReturnType<FaceExpressions["asSortedArray"]>
 
 const FaceApiContext = createContext<FaceApiContextType | undefined>(undefined);
 
@@ -59,7 +61,7 @@ const CanvasBlock = forwardRef<RefCanvas, any>(function canvasLayout(props, ref)
     }
 )
 
-function reducer (curExpr: FaceExpressionLabel, newExpr: FaceExpressionLabel | null) {
+function reducer(curExpr: FaceExpressionLabel, newExpr: FaceExpressionLabel | null) {
     return (newExpr && (curExpr !== newExpr)) ? newExpr : curExpr
 }
 
@@ -73,16 +75,16 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
         (callback: OnModelsLoaded) => {
             onModelsLoadedRef.current = callback
         }, []
-    ) ;
+    );
 
     const onExpressionChange = useCallback(
         (callback: OnExpressionChange) => {
             onExpressionChangRef.current = callback
         }, []
-    ) ;
+    );
 
     const [modelsLoaded, setModelsLoaded] = useState(false);
-    const [expression, setExpression]: [FaceExpressionLabel, Dispatch<FaceExpressionLabel>] = useReducer(reducer, 'neutral' )
+    const [expression, setExpression]: [FaceExpressionLabel, Dispatch<FaceExpressionLabel>] = useReducer(reducer, 'neutral')
 
     useEffect(() => {
         onExpressionChangRef.current && onExpressionChangRef.current(expression);
@@ -95,12 +97,14 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
             const devices = await navigator.mediaDevices.enumerateDevices();
             const videoDevices = devices.filter(device => (device.kind === 'videoinput' && device.label.includes('USB')));
             console.log(' videoDevices ', videoDevices)
-            const deviceId = videoDevices[videoDevices.length-1]?.deviceId;
+            const deviceId = videoDevices[videoDevices.length - 1]?.deviceId;
             console.log(' deviceId= ', deviceId)
 
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: {deviceId} });
-                if (videoRef && videoRef.current) { videoRef.current.srcObject = stream; }
+                const stream = await navigator.mediaDevices.getUserMedia({video: {deviceId}});
+                if (videoRef && videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                }
             } catch (err) {
                 console.error('Error accessing webcam:', err);
             }
@@ -128,28 +132,35 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
             // Detect faces in the video stream
             const handleVideoPlay = () => {
                 const video = videoRef.current;
-                if (!video) {return}
+                if (!video) {
+                    return
+                }
 
                 const detect = async () => {
 
-                    if (!videoRef || !videoRef.current) { return }
+                    if (!videoRef || !videoRef.current) {
+                        return
+                    }
                     const size = {
                         width: (video.clientWidth || defSize.width),
                         height: (video.clientHeight || defSize.height)
                     };
 
-                    const detection = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.8, maxResults: 1 }))
+                    const detection = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options({
+                        minConfidence: 0.8,
+                        maxResults: 1
+                    }))
                         .withFaceLandmarks()
                         .withFaceExpressions()
                     const canvas = canvasRef.current;
-                    if (!canvas) {return}
+                    if (!canvas) {
+                        return
+                    }
 
                     faceapi.matchDimensions(canvas, {...size});
                     if (detection && canvas) {
                         const sorted: Sorted = detection.expressions.asSortedArray();
                         if (maxExceedingThreshold(sorted, 0.6)) {
-                        console.log(detection.expressions.asSortedArray()[0], detection.expressions.asSortedArray()[1]);
-
                             setExpression(detection.expressions.asSortedArray()[0].expression);
                         }
 
@@ -184,9 +195,17 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
         <CanvasBlock
             ref={canvasRef} id="outputCanvas"
             width="100%" height="100%"
-            style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none"}}
+            style={{position: "absolute", top: 0, left: 0, pointerEvents: "none"}}
         />
     </div>
+
+    const emojy$ = useMemo(() => new Observable<FaceExpressionLabel>((observer) => {
+            onExpressionChange((expression: FaceExpressionLabel) => { observer.next(expression); });
+        })
+            .pipe(
+                debounceTime(THRESHOLD_TIME)
+            )
+        , [])
 
     return (
         <FaceApiContext.Provider
@@ -195,6 +214,7 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
                 modelsLoaded,
                 onModelsLoaded,
                 onExpressionChange,
+                emojy$,
             }}
         >
             {children}

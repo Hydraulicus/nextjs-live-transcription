@@ -1,26 +1,16 @@
 "use client";
 
-import React, {useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useAppStore} from "@/app/store/app-store-provider";
-import {
-    LiveConnectionState,
-    LiveTranscriptionEvent,
-    LiveTranscriptionEvents,
-    useDeepgram,
-} from "../context/DeepgramContextProvider";
-import {
-    MicrophoneEvents,
-    MicrophoneState,
-    useMicrophone,
-} from "../context/MicrophoneContextProvider";
+import {LiveConnectionState, useDeepgram,} from "../context/DeepgramContextProvider";
+import {MicrophoneState, useMicrophone,} from "../context/MicrophoneContextProvider";
 import {FaceExpressionLabel, useFaceApi} from "../context/FaceApiContextProvider"
-import Visualizer from "./Visualizer";
 import {Icon} from "@/app/components/Icon";
 import "./index.css";
 import {LoadingModal} from "@/app/components/LoadingModal";
 import Popover from "@/app/components/popOver/Popover";
-import {animateIcon, inputDebounce} from "@/app/components/helpers";
-import {emoticonsIcon, FACE_EXPRESSION_TIME} from "@/app/components/const";
+import {animateIcon} from "@/app/components/helpers";
+import {emoticonsIcon} from "@/app/components/const";
 
 const App: () => JSX.Element = () => {
 
@@ -30,39 +20,55 @@ const App: () => JSX.Element = () => {
     const {
         outputCanvas, modelsLoaded,
         onModelsLoaded,
-        onExpressionChange,
+        emojy$,
     } = useFaceApi();
     const keepAliveInterval = useRef<any>();
     const textarea = useRef<any>();
     const [selection, setSelection] = useState<{ start: number, end: number }>()
 
+    const insertAtCursor = useCallback(({expression, textarea}: {
+            expression: FaceExpressionLabel,
+            textarea: React.MutableRefObject<HTMLTextAreaElement>
+        }) => {
+            if (!(textarea && textarea.current)) {
+                return
+            }
+            let cursorPos = textarea.current.selectionStart;
+            let v = textarea.current.value;
+            let textBefore = v.substring(0, cursorPos);
+            let textAfter = v.substring(cursorPos, v.length);
+            setText(textBefore + expression + textAfter);
+
+            cursorPos += expression.length;
+            setSelection({start: cursorPos, end: cursorPos})
+        }, [setText]
+    )
+
+    const emojyChangeHandler = useMemo(() =>
+            () => emojy$.subscribe((expression: FaceExpressionLabel) => {
+                    insertAtCursor({expression: emoticonsIcon[expression], textarea});
+                    animateIcon(expression)
+                }
+            )
+        , [emojy$, insertAtCursor])
+
+    useEffect(() => {
+        emojyChangeHandler()
+    }, [emojyChangeHandler]);
 
     useEffect(() => {
         setupMicrophone();
     }, [setupMicrophone]);
 
     useEffect(() => {
-        onModelsLoaded(() => { setLoading(false) })
+        onModelsLoaded(() => {
+            setLoading(false)
+        })
     }, [onModelsLoaded, setLoading])
 
-    const onTextInput = (inp: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const onTextInput = useCallback((inp: React.ChangeEvent<HTMLTextAreaElement>) => {
         setText(inp.target.value)
-    }
-
-    function insertAtCursor({expression, textarea}: {
-        expression: FaceExpressionLabel,
-        textarea: React.MutableRefObject<HTMLTextAreaElement>
-    }) {
-        if (!(textarea && textarea.current)) { return }
-        let cursorPos = textarea.current.selectionStart;
-        let v = textarea.current.value;
-        let textBefore = v.substring(0, cursorPos);
-        let textAfter = v.substring(cursorPos, v.length);
-        setText(textBefore + expression + textAfter);
-
-        cursorPos += expression.length;
-        setSelection({start: cursorPos, end: cursorPos})
-    }
+    }, [setText]);
 
     useEffect(() => {
         if (!selection) return;  // prevent running on start
@@ -70,17 +76,6 @@ const App: () => JSX.Element = () => {
         textarea.current.focus();
         textarea.current.setSelectionRange(start, end);
     }, [selection]);
-
-    onExpressionChange((expression: FaceExpressionLabel) => {
-        const onChange = ({text, expression}: { text: string, expression: FaceExpressionLabel }) => {
-            insertAtCursor({expression: emoticonsIcon[expression], textarea});
-            animateIcon(expression)
-        }
-        inputDebounce((expression: FaceExpressionLabel) => onChange({
-            text,
-            expression
-        }), FACE_EXPRESSION_TIME)(expression);
-    })
 
     useEffect(() => {
         if (microphoneState === MicrophoneState.Ready) {
