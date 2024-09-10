@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import React, {SyntheticEvent, useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useAppStore} from "@/app/store/app-store-provider";
 import {LiveConnectionState, useDeepgram,} from "../context/DeepgramContextProvider";
 import {MicrophoneState, useMicrophone,} from "../context/MicrophoneContextProvider";
@@ -11,6 +11,11 @@ import {LoadingModal} from "@/app/components/LoadingModal";
 import Popover from "@/app/components/popOver/Popover";
 import {animateIcon} from "@/app/components/helpers";
 import {emoticonsIcon} from "@/app/components/const";
+
+type AddEmojy = {
+    expression: FaceExpressionLabel,
+    textarea: React.MutableRefObject<HTMLTextAreaElement>
+};
 
 const App: () => JSX.Element = () => {
 
@@ -26,11 +31,8 @@ const App: () => JSX.Element = () => {
     const textarea = useRef<any>();
     const [selection, setSelection] = useState<{ start: number, end: number }>()
 
-    const insertAtCursor = useCallback(({expression, textarea}: {
-            expression: FaceExpressionLabel,
-            textarea: React.MutableRefObject<HTMLTextAreaElement>
-        }) => {
-            if (!(textarea && textarea.current)) {
+    const insertAtCursor = useCallback(({expression, textarea}: AddEmojy) => {
+            if (!(textarea && textarea.current && expression)) {
                 return
             }
             let cursorPos = textarea.current.selectionStart;
@@ -42,12 +44,18 @@ const App: () => JSX.Element = () => {
             cursorPos += expression.length;
             setSelection({start: cursorPos, end: cursorPos})
         }, [setText]
-    )
+    );
+
+    const addEmojy = ({expression, textarea}: AddEmojy) => {
+        insertAtCursor({expression: emoticonsIcon[expression], textarea});
+        animateIcon(expression)
+    }
 
     const emojyChangeHandler = useMemo(() =>
             () => emojy$.subscribe((expression: FaceExpressionLabel) => {
-                    insertAtCursor({expression: emoticonsIcon[expression], textarea});
-                    animateIcon(expression)
+                return addEmojy({expression: emoticonsIcon[expression], textarea})
+                    // insertAtCursor({expression: emoticonsIcon[expression], textarea});
+                    // animateIcon(expression)
                 }
             )
         , [emojy$, insertAtCursor])
@@ -159,6 +167,12 @@ const App: () => JSX.Element = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [microphoneState, connectionState]);
 
+    const iconOnClick = (e: React.MouseEvent<SVGSVGElement>) => {
+        e.preventDefault();
+        console.log((e.currentTarget as Element))
+        addEmojy({expression: (e.currentTarget as Element).id, textarea});
+    }
+
     return (
         loading ?
             <LoadingModal/>
@@ -172,29 +186,28 @@ const App: () => JSX.Element = () => {
                 <div className="grow flex flex-1 flex-col items-center justify-center bg-green-500 p-2 max-w-md w-full">
                     <div className="max-w-3xl h-15 shrink">
                         <Popover trigger="hover" content={<p className="content">Confounded</p>}>
-                            <Icon id="disgusted" className="emotionIcon" name="confounded-face"/>
+                            <Icon id="disgusted" className="emotionIcon" name="confounded-face" onClick={iconOnClick}/>
                         </Popover>
                         <Popover trigger="hover" content={<p className="content">Fearful</p>}>
-                            <Icon id="fearful" className="emotionIcon" name="fearful-face"/>
+                            <Icon id="fearful" className="emotionIcon" name="fearful-face" onClick={iconOnClick}/>
                         </Popover>
                         <Popover trigger="hover" content={<p className="content">Hushed</p>}>
-                            <Icon id="surprised" className="emotionIcon" name="hushed-face"/>
+                            <Icon id="surprised" className="emotionIcon" name="hushed-face" onClick={iconOnClick}/>
                         </Popover>
                         <Popover trigger="hover" content={<p className="content">Slightly frowning</p>}>
-                            <Icon id="sad" className="emotionIcon" name="slightly-frowning-face"/>
+                            <Icon id="sad" className="emotionIcon" name="slightly-frowning-face" onClick={iconOnClick}/>
                         </Popover>
                         <Popover trigger="hover" content={<p className="content">Slightly smiling</p>}>
-                            <Icon id="happy" className="emotionIcon" name="slightly-smiling-face"/>
+                            <Icon id="happy" className="emotionIcon" name="slightly-smiling-face" onClick={iconOnClick}/>
                         </Popover>
 
                     </div>
-                    {/*<div className="bottom-[8rem] inset-x-0 max-w-4xl mx-auto text-center bg-cyan-600">*/}
-                    {/*    {markup}*/}
-                    {/*</div>*/}
                     <div className="w-full h-full ">
                         <label htmlFor="message"
-                               className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your
-                            message</label>
+                               className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                        >
+                            Your message here
+                        </label>
                         <textarea id="message"
                                   ref={textarea}
                                   className="textarea"
