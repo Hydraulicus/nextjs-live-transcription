@@ -53,9 +53,7 @@ const App: () => JSX.Element = () => {
 
     const emojyChangeHandler = useMemo(() =>
             () => emojy$.subscribe((expression: FaceExpressionLabel) => {
-                return addEmojy({expression: emoticonsIcon[expression], textarea})
-                    // insertAtCursor({expression: emoticonsIcon[expression], textarea});
-                    // animateIcon(expression)
+                addEmojy({expression, textarea})
                 }
             )
         , [emojy$, insertAtCursor])
@@ -169,7 +167,6 @@ const App: () => JSX.Element = () => {
 
     const iconOnClick = (e: React.MouseEvent<SVGSVGElement>) => {
         e.preventDefault();
-        console.log((e.currentTarget as Element))
         addEmojy({expression: (e.currentTarget as Element).id, textarea});
     }
 
