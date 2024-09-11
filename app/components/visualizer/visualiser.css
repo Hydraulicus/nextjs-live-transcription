@@ -1,0 +1,6 @@
+#canvasBackground {
+    width: 100%;
+    height: calc(100% - 4rem);
+    position: absolute;
+    padding-bottom: 4rem;
+}

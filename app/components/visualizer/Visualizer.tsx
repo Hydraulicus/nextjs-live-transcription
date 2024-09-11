@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import "./visualiser.css"
 
 const interpolateColor = (
   startColor: number[],
@@ -33,8 +34,6 @@ const Visualizer = ({ microphone }: { microphone: MediaRecorder }) => {
 
     if (!canvas) return;
 
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
 
@@ -52,13 +51,13 @@ const Visualizer = ({ microphone }: { microphone: MediaRecorder }) => {
 
     const barWidth = 10;
     let x = 0;
-    const startColor = [19, 239, 147];
-    const endColor = [20, 154, 251];
+    const startColor = [19, 209, 140];
+    const endColor = [10, 85, 180];
 
     for (const value of dataArray) {
       const barHeight = (value / 255) * height * 2;
 
-      const interpolationFactor = value / 255;
+      const interpolationFactor = value / 128;
 
       const color = interpolateColor(startColor, endColor, interpolationFactor);
 
@@ -68,7 +67,7 @@ const Visualizer = ({ microphone }: { microphone: MediaRecorder }) => {
     }
   };
 
-  return <canvas ref={canvasRef} width={window.innerWidth}></canvas>;
+  return <canvas ref={canvasRef} width={window.innerWidth} id="canvasBackground"></canvas>;
 };
 
 export default Visualizer;

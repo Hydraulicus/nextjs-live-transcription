@@ -11,6 +11,7 @@ import {LoadingModal} from "@/app/components/LoadingModal";
 import Popover from "@/app/components/popOver/Popover";
 import {animateIcon} from "@/app/components/helpers";
 import {emoticonsIcon} from "@/app/components/const";
+import Visualizer from "@/app/components/visualizer/Visualizer";
 
 type AddEmojy = {
     expression: FaceExpressionLabel,
@@ -53,7 +54,7 @@ const App: () => JSX.Element = () => {
 
     const emojyChangeHandler = useMemo(() =>
             () => emojy$.subscribe((expression: FaceExpressionLabel) => {
-                addEmojy({expression, textarea})
+                    addEmojy({expression, textarea})
                 }
             )
         , [emojy$, insertAtCursor])
@@ -175,6 +176,7 @@ const App: () => JSX.Element = () => {
             <LoadingModal/>
             :
             <div className="app">
+                {microphone && <Visualizer microphone={microphone}/>}
 
                 <div className="flex flex-1 items-center justify-center bg-pink-500 p-2 max-w-md w-full">
                     <div className="bg-emerald-600 relative">{outputCanvas}</div>
@@ -195,7 +197,8 @@ const App: () => JSX.Element = () => {
                             <Icon id="sad" className="emotionIcon" name="slightly-frowning-face" onClick={iconOnClick}/>
                         </Popover>
                         <Popover trigger="hover" content={<p className="content">Slightly smiling</p>}>
-                            <Icon id="happy" className="emotionIcon" name="slightly-smiling-face" onClick={iconOnClick}/>
+                            <Icon id="happy" className="emotionIcon" name="slightly-smiling-face"
+                                  onClick={iconOnClick}/>
                         </Popover>
 
                     </div>
@@ -212,32 +215,10 @@ const App: () => JSX.Element = () => {
                                   value={text}
                                   onChange={onTextInput}
                         >
-            </textarea>
-
+                        </textarea>
                     </div>
                 </div>
-
             </div>
-
-
-        // <>
-        //   <div className="flex h-full antialiased">
-        //     <div className="flex flex-row h-full w-full overflow-x-hidden">
-        //       <div className="flex flex-col flex-auto h-full bg-cyan-900 ">
-        //         {/* height 100% minus 8rem */}
-        //         <div className="relative w-full h-screen justify-center items-center ">
-        //           <div className="max-w-3xl bg-emerald-600">here camera output</div>
-        //           <div className="max-w-3xl bg-amber-700 h-5">strip of miles are here </div>
-        //           <div className="max-w-3xl bg-cyan-600 h-5">{caption} </div>
-        //           {/*{microphone && <Visualizer microphone={microphone} />}*/}
-        //           <div className="absolute bottom-[8rem] inset-x-0 max-w-4xl mx-auto text-center">
-        //             {caption && <span className="bg-black/70 p-8">{caption}</span>}
-        //           </div>
-        //         </div>
-        //       </div>
-        //     </div>
-        //   </div>
-        // </>
     );
 };
 
