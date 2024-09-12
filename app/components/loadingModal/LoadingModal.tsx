@@ -1,12 +1,11 @@
 import {ReactNode} from "react";
+import "./loadingModal.css"
 
 export const LoadingModal = (): ReactNode => {
     return <div className="relative h-full w-full ">
-        <div id="pd-basic-modal"
-             className="pd-overlay w-full h-full fixed top-0 left-0 z-[60] flex justify-center items-center overflow-x-hidden overflow-y-auto">
-            <div
-                className="sm:max-w-lg sm:w-full m-5 sm:mx-auto">
-                <div className="flex flex-col rounded-2xl py-4 px-5 dark:bg-slate-800">
+        <div className="modal-body">
+            <div className="sm:max-w-lg sm:w-full m-5 sm:mx-auto">
+                <div className="flex flex-col py-4 px-5 ">
                     <div className="overflow-y-auto py-4 min-h-[100px] dark:text-slate-400 text-lg text-center">
                         <p>Neural network models</p>
                         <p>L

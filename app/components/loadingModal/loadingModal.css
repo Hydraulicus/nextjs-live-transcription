@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    .modal-body {
+        @apply  w-full h-full fixed top-0 left-0 z-[60] flex justify-center items-center overflow-x-hidden overflow-y-auto
+    }
+}

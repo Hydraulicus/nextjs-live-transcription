@@ -7,7 +7,7 @@ import {MicrophoneState, useMicrophone,} from "../context/MicrophoneContextProvi
 import {FaceExpressionLabel, useFaceApi} from "../context/FaceApiContextProvider"
 import {Icon} from "@/app/components/Icon";
 import "./index.css";
-import {LoadingModal} from "@/app/components/LoadingModal";
+import {LoadingModal} from "@/app/components/loadingModal/LoadingModal";
 import Popover from "@/app/components/popOver/Popover";
 import {animateIcon} from "@/app/components/helpers";
 import {emoticonsIcon} from "@/app/components/const";
@@ -177,8 +177,7 @@ const App: () => JSX.Element = () => {
             :
             <div className="app">
                 {microphone && <Visualizer microphone={microphone}/>}
-
-                <div className="flex flex-1 items-center justify-center bg-pink-500 p-2 max-w-md w-full">
+                <div className="topBlock">
                     <div className="bg-emerald-600 relative">{outputCanvas}</div>
                 </div>
 

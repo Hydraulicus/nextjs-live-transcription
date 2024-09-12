@@ -2,11 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-
 @layer utilities {
     .app {
         @apply mx-auto flex h-full flex-col gap-6 container  items-center justify-center
     }
+
+    .topBlock {
+        @apply flex flex-1 items-center justify-center bg-pink-500 p-2 max-w-md w-full
+    }
+
     .textarea {
         @apply block p-2.5 w-full h-[calc(100%-6rem)]
         text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300
