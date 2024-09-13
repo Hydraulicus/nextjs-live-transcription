@@ -1,9 +1,9 @@
 "use client";
 
-import React, {SyntheticEvent, useCallback, useEffect, useMemo, useRef, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useAppStore} from "@/app/store/app-store-provider";
 import {LiveConnectionState, useDeepgram,} from "../context/DeepgramContextProvider";
-import {MicrophoneState, useMicrophone,} from "../context/MicrophoneContextProvider";
+import {MicrophoneEvents, MicrophoneState, useMicrophone,} from "../context/MicrophoneContextProvider";
 import {FaceExpressionLabel, useFaceApi} from "../context/FaceApiContextProvider"
 import {Icon} from "@/app/components/Icon";
 import "./index.css";
@@ -12,9 +12,11 @@ import Popover from "@/app/components/popOver/Popover";
 import {animateIcon} from "@/app/components/helpers";
 import {emoticonsIcon} from "@/app/components/const";
 import Visualizer from "@/app/components/visualizer/Visualizer";
+import {LiveTranscriptionEvent, LiveTranscriptionEvents} from "@deepgram/sdk";
+import * as faceapi from "face-api.js";
 
-type AddEmojy = {
-    expression: FaceExpressionLabel,
+type AddEmojyAndText = {
+    content: FaceExpressionLabel | string,
     textarea: React.MutableRefObject<HTMLTextAreaElement>
 };
 
@@ -28,33 +30,35 @@ const App: () => JSX.Element = () => {
         onModelsLoaded,
         emojy$,
     } = useFaceApi();
+    const captionTimeout = useRef<any>();
     const keepAliveInterval = useRef<any>();
     const textarea = useRef<any>();
     const [selection, setSelection] = useState<{ start: number, end: number }>()
 
-    const insertAtCursor = useCallback(({expression, textarea}: AddEmojy) => {
-            if (!(textarea && textarea.current && expression)) {
+    const insertAtCursor = useCallback(({content, textarea}: AddEmojyAndText) => {
+            if (!(textarea && textarea.current && content)) {
                 return
             }
             let cursorPos = textarea.current.selectionStart;
             let v = textarea.current.value;
             let textBefore = v.substring(0, cursorPos);
             let textAfter = v.substring(cursorPos, v.length);
-            setText(textBefore + expression + textAfter);
+            setText(textBefore + content + textAfter);
 
-            cursorPos += expression.length;
+            cursorPos += content.length;
             setSelection({start: cursorPos, end: cursorPos})
         }, [setText]
     );
 
-    const addEmojy = ({expression, textarea}: AddEmojy) => {
-        insertAtCursor({expression: emoticonsIcon[expression], textarea});
-        animateIcon(expression)
+    const addEmojy = ({content, textarea}: AddEmojyAndText) => {
+        if (!content || !((faceapi.FACE_EXPRESSION_LABELS).includes(content)) || content === 'neutral') return;
+        insertAtCursor({content: emoticonsIcon[content], textarea});
+        animateIcon(content)
     }
 
     const emojyChangeHandler = useMemo(() =>
             () => emojy$.subscribe((expression: FaceExpressionLabel) => {
-                    addEmojy({expression, textarea})
+                    addEmojy({content: expression, textarea})
                 }
             )
         , [emojy$, insertAtCursor])
@@ -65,7 +69,7 @@ const App: () => JSX.Element = () => {
 
     useEffect(() => {
         setupMicrophone();
-    }, [setupMicrophone]);
+    }, []);
 
     useEffect(() => {
         onModelsLoaded(() => {
@@ -84,19 +88,19 @@ const App: () => JSX.Element = () => {
         textarea.current.setSelectionRange(start, end);
     }, [selection]);
 
-    useEffect(() => {
-        if (microphoneState === MicrophoneState.Ready) {
-            // TODO. Uncommit for production. Disable connection to Deepgram for prevent wasting of funds
-            // connectToDeepgram({
-            //   model: "nova-2",
-            //   interim_results: true,
-            //   smart_format: true,
-            //   filler_words: true,
-            //   utterance_end_ms: 3000,
-            // });
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [microphoneState]);
+    // useEffect(() => {
+    //     // if (connection) return;
+    //     if (microphoneState === MicrophoneState.Ready) {
+    //         connectToDeepgram({
+    //           model: "nova-2",
+    //           interim_results: true,
+    //           smart_format: true,
+    //           filler_words: true,
+    //           utterance_end_ms: 3000,
+    //         });
+    //     }
+    //     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // }, [microphoneState]);
 
     // useEffect(() => {
     //     if (!microphone || !connection) return;
@@ -113,16 +117,13 @@ const App: () => JSX.Element = () => {
     //         const {is_final: isFinal, speech_final: speechFinal} = data;
     //         let thisCaption = data.channel.alternatives[0].transcript;
     //
-    //         console.log("thisCaption", thisCaption);
     //         if (thisCaption !== "") {
-    //             console.log('thisCaption !== ""', thisCaption);
-    //             setCaption(thisCaption);
+    //             insertAtCursor({content: thisCaption, textarea});
     //         }
     //
     //         if (isFinal && speechFinal) {
     //             clearTimeout(captionTimeout.current);
     //             captionTimeout.current = setTimeout(() => {
-    //                 setCaption(undefined);
     //                 clearTimeout(captionTimeout.current);
     //             }, 3000);
     //         }
@@ -168,7 +169,7 @@ const App: () => JSX.Element = () => {
 
     const iconOnClick = (e: React.MouseEvent<SVGSVGElement>) => {
         e.preventDefault();
-        addEmojy({expression: (e.currentTarget as Element).id, textarea});
+        addEmojy({content: (e.currentTarget as Element).id, textarea});
     }
 
     return (
@@ -176,13 +177,13 @@ const App: () => JSX.Element = () => {
             <LoadingModal/>
             :
             <div className="app">
-                {microphone && <Visualizer microphone={microphone}/>}
+                {/*{microphone && <Visualizer microphone={microphone}/>}*/}
                 <div className="topBlock">
-                    <div className="bg-emerald-600 relative">{outputCanvas}</div>
+                    <div className="bg-cyan-900 relative rounded">{outputCanvas}</div>
                 </div>
 
-                <div className="grow flex flex-1 flex-col items-center justify-center bg-green-500 p-2 max-w-md w-full">
-                    <div className="max-w-3xl h-15 shrink">
+                <div className="messageBlock">
+                    <div className="max-w-3xl h-8 shrink">
                         <Popover trigger="hover" content={<p className="content">Confounded</p>}>
                             <Icon id="disgusted" className="emotionIcon" name="confounded-face" onClick={iconOnClick}/>
                         </Popover>
@@ -203,14 +204,14 @@ const App: () => JSX.Element = () => {
                     </div>
                     <div className="w-full h-full ">
                         <label htmlFor="message"
-                               className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                               className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300"
                         >
-                            Your message here
+                            Speak or write your thoughts here:
                         </label>
                         <textarea id="message"
                                   ref={textarea}
                                   className="textarea"
-                                  placeholder="Write your thoughts here..."
+                                  placeholder="Your message here..."
                                   value={text}
                                   onChange={onTextInput}
                         >

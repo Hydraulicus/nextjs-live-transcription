@@ -84,7 +84,7 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
     );
 
     const [modelsLoaded, setModelsLoaded] = useState(false);
-    const [expression, setExpression]: [FaceExpressionLabel, Dispatch<FaceExpressionLabel>] = useReducer(reducer, 'neutral')
+    const [expression, setExpression]: [FaceExpressionLabel, Dispatch<FaceExpressionLabel>] = useReducer(reducer, '')
 
     useEffect(() => {
         onExpressionChangRef.current && onExpressionChangRef.current(expression);

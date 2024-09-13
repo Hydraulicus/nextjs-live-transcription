@@ -8,14 +8,23 @@
     }
 
     .topBlock {
-        @apply flex flex-1 items-center justify-center bg-pink-500 p-2 max-w-md w-full
+        @apply flex flex-1 items-center justify-center bg-sky-900 p-2 max-w-md w-full rounded-lg
+    }
+
+    .messageBlock {
+        @apply grow flex flex-1 flex-col items-center justify-center bg-yellow-950 p-2 max-w-md w-full rounded-lg
     }
 
     .textarea {
         @apply block p-2.5 w-full h-[calc(100%-6rem)]
         text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300
-        focus:ring-blue-500 focus:border-blue-500
-        dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500;
+        focus:ring-blue-700 focus:border-blue-500
+        dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400
+        dark:text-gray-200 dark:focus:ring-cyan-700 dark:focus:border-cyan-700;
+
+        &:focus-visible {
+            @apply outline-2 outline-gray-50 dark:outline-cyan-700;
+        }
     }
 
     .popover {
@@ -37,3 +46,9 @@
         @apply h-[1.5em] w-[1.5em] mx-2 ease-in-out cursor-pointer
     }
 }
+
+/*@layer base {*/
+/*    :focus-visible {*/
+/*        @apply outline-dashed outline-2 outline-offset-8 accent-red-300;*/
+/*    }*/
+/*}*/

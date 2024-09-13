@@ -51,8 +51,8 @@ const Visualizer = ({ microphone }: { microphone: MediaRecorder }) => {
 
     const barWidth = 10;
     let x = 0;
-    const startColor = [19, 209, 140];
-    const endColor = [10, 85, 180];
+    const startColor = [19, 179, 120];
+    const endColor = [10, 75, 160];
 
     for (const value of dataArray) {
       const barHeight = (value / 255) * height * 2;
