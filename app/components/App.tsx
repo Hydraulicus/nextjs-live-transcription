@@ -26,7 +26,7 @@ const App: () => JSX.Element = () => {
     const {connection, connectToDeepgram, connectionState} = useDeepgram();
     const {setupMicrophone, microphone, startMicrophone, microphoneState} = useMicrophone();
     const {
-        outputCanvas, modelsLoaded,
+        outputCanvas,
         onModelsLoaded,
         emojy$,
     } = useFaceApi();
@@ -88,62 +88,58 @@ const App: () => JSX.Element = () => {
         textarea.current.setSelectionRange(start, end);
     }, [selection]);
 
-    // useEffect(() => {
-    //     // if (connection) return;
-    //     if (microphoneState === MicrophoneState.Ready) {
-    //         connectToDeepgram({
-    //           model: "nova-2",
-    //           interim_results: true,
-    //           smart_format: true,
-    //           filler_words: true,
-    //           utterance_end_ms: 3000,
-    //         });
-    //     }
-    //     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // }, [microphoneState]);
+    useEffect(() => {
+        if (microphoneState === MicrophoneState.Ready) {
+            connectToDeepgram({
+              model: "nova-2",
+              interim_results: true,
+              smart_format: true,
+              filler_words: true,
+              utterance_end_ms: 3000,
+            });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [microphoneState]);
 
-    // useEffect(() => {
-    //     if (!microphone || !connection) return;
-    //
-    //     const onData = (e: BlobEvent) => {
-    //         // iOS SAFARI FIX:
-    //         // Prevent packetZero from being sent. If sent at size 0, the connection will close.
-    //         if (e.data.size > 0) {
-    //             connection?.send(e.data);
-    //         }
-    //     };
-    //
-    //     const onTranscript = (data: LiveTranscriptionEvent) => {
-    //         const {is_final: isFinal, speech_final: speechFinal} = data;
-    //         let thisCaption = data.channel.alternatives[0].transcript;
-    //
-    //         if (thisCaption !== "") {
-    //             insertAtCursor({content: thisCaption, textarea});
-    //         }
-    //
-    //         if (isFinal && speechFinal) {
-    //             clearTimeout(captionTimeout.current);
-    //             captionTimeout.current = setTimeout(() => {
-    //                 clearTimeout(captionTimeout.current);
-    //             }, 3000);
-    //         }
-    //     };
-    //
-    //     if (connectionState === LiveConnectionState.OPEN) {
-    //         connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
-    //         microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
-    //
-    //         startMicrophone();
-    //     }
-    //
-    //     return () => {
-    //         // prettier-ignore
-    //         connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
-    //         microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
-    //         clearTimeout(captionTimeout.current);
-    //     };
-    //     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // }, [connectionState]);
+    useEffect(() => {
+        if (!microphone || !connection) return;
+
+        const onData = (e: BlobEvent) => {
+            // iOS SAFARI FIX:
+            // Prevent packetZero from being sent. If sent at size 0, the connection will close.
+            if (e.data.size > 0) {
+                connection?.send(e.data);
+            }
+        };
+
+        const onTranscript = (data: LiveTranscriptionEvent) => {
+            const {is_final: isFinal, speech_final: speechFinal} = data;
+            let thisCaption = data.channel.alternatives[0].transcript;
+
+            if (isFinal && speechFinal) {
+                clearTimeout(captionTimeout.current);
+                insertAtCursor({content: thisCaption, textarea});
+                captionTimeout.current = setTimeout(() => {
+                    clearTimeout(captionTimeout.current);
+                }, 3000);
+            }
+        };
+
+        if (connectionState === LiveConnectionState.OPEN) {
+            connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
+            microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
+
+            startMicrophone();
+        }
+
+        return () => {
+            // prettier-ignore
+            connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
+            microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
+            clearTimeout(captionTimeout.current);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [connectionState]);
 
     useEffect(() => {
         if (!connection) return;
@@ -177,7 +173,7 @@ const App: () => JSX.Element = () => {
             <LoadingModal/>
             :
             <div className="app">
-                {/*{microphone && <Visualizer microphone={microphone}/>}*/}
+                {microphone && <Visualizer microphone={microphone}/>}
                 <div className="topBlock">
                     <div className="bg-cyan-900 relative rounded">{outputCanvas}</div>
                 </div>
