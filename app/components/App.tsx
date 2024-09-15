@@ -116,9 +116,9 @@ const App: () => JSX.Element = () => {
             const {is_final: isFinal, speech_final: speechFinal} = data;
             let thisCaption = data.channel.alternatives[0].transcript;
 
-            if (isFinal && speechFinal) {
+            if (isFinal && speechFinal && thisCaption.length > 0) {
                 clearTimeout(captionTimeout.current);
-                insertAtCursor({content: thisCaption, textarea});
+                insertAtCursor({content: thisCaption + '\r\n', textarea});
                 captionTimeout.current = setTimeout(() => {
                     clearTimeout(captionTimeout.current);
                 }, 3000);

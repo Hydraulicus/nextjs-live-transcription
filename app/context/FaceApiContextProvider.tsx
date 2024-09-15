@@ -13,7 +13,7 @@ import {
     Dispatch,
     useReducer,
     useCallback,
-    SyntheticEvent, useMemo,
+    useMemo,
 } from "react";
 
 import * as faceapi from 'face-api.js';
@@ -22,8 +22,6 @@ import {debounceTime, Observable} from "rxjs";
 
 const MODEL_URL = '/models';
 const minProbability = 0.75
-const FPS = 10;
-const tik = 1000 / FPS;
 const defSize = {
     width: 320,
     height: 240
@@ -53,7 +51,7 @@ interface FaceApiContextProviderProps {
 const FaceApiContext = createContext<FaceApiContextType | undefined>(undefined);
 
 const VideoBlock = forwardRef<RefVideo, any>(function videoLayout(props, ref) {
-        return <video ref={ref} muted width="100%" {...props}/>
+        return <video ref={ref} autoPlay muted width="100%" {...props}/>
     }
 )
 const CanvasBlock = forwardRef<RefCanvas, any>(function canvasLayout(props, ref) {
@@ -94,14 +92,8 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
         // Access the webcam
         const startVideo = async () => {
 
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter(device => (device.kind === 'videoinput' && device.label.includes('USB')));
-            console.log(' videoDevices ', videoDevices)
-            const deviceId = videoDevices[videoDevices.length - 1]?.deviceId;
-            console.log(' deviceId= ', deviceId)
-
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({video: {deviceId}});
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
                 if (videoRef && videoRef.current) {
                     videoRef.current.srcObject = stream;
                 }
@@ -188,10 +180,7 @@ const FaceApiContextProvider: FunctionComponent<FaceApiContextProviderProps> = (
 
     const outputCanvas = <div id="outputCanvas" style={{width: "100%", aspectRatio: "4/3"}}>
         {/* TODO remove in product - onClick and pointerEvents */}
-        <VideoBlock ref={videoRef} id="outputVideo"
-                    width="100%" height="100%"
-                    onClick={(e: SyntheticEvent<HTMLVideoElement>) => (e.target as HTMLVideoElement).play()}
-        />
+        <VideoBlock ref={videoRef} id="outputVideo" width="100%" height="100%" />
         <CanvasBlock
             ref={canvasRef} id="outputCanvas"
             width="100%" height="100%"
