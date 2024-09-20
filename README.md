@@ -7,6 +7,11 @@ The purpose of this demo is to showcase live speech and emotion recognition, con
 - Capture streaming audio using [Deepgram Streaming Speech to Text](https://developers.deepgram.com/docs/getting-started-with-live-streaming-audio).
 - Recognition of emotions powered by [face-api](https://justadudewhohacks.github.io/face-api.js/docs/index.html) built on top of the TensorFlow.js core API.
 
+![Preview](./docs/poster.jpg)
+
+## Live Demo
+https://speech-and-emotion-recognition.vercel.app/
+
 ## Quickstart
 
 #### Clone the repository
